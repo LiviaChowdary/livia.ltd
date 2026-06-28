@@ -1,0 +1,13 @@
+.DS_Store
+.claude/
+
+# Unused heavy assets — not referenced by index.html (keep the deploy lean)
+assets/iss.glb
+assets/probe.glb
+assets/space_night_2k.hdr
+assets/floor_arm.jpg
+assets/floor_diff.jpg
+assets/floor_nor.jpg
+assets/wall_arm.jpg
+assets/wall_diff.jpg
+assets/wall_nor.jpg

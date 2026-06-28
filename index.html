@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>livia — personal station</title>
+<meta name="description" content="Livia — builder, founder, data scientist. 40+ ML projects and four ventures across health, food, climate, and data. Fly out and explore her station." />
+<meta name="theme-color" content="#03050c" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --cyan:#4ff8d2; --amber:#f6c744; --red:#ff5a3a; --green:#46f08a; --bg:#03050c; --ink:#e9f3ff; --muted:#5a6480;
+    --mono:'Space Mono',ui-monospace,monospace; --syne:'Syne',sans-serif; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden}
+  body{ background:var(--bg); color:var(--ink); font-family:var(--mono); -webkit-font-smoothing:antialiased; }
+  #c{position:fixed;inset:0;z-index:0;display:block;cursor:crosshair}
+  #vig{position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(128% 100% at 50% 50%, transparent 52%, rgba(0,0,0,.6) 100%)}
+  #grain{position:fixed;inset:-20px;z-index:3;pointer-events:none;opacity:.04;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");animation:gshift .5s steps(2) infinite}
+  @keyframes gshift{0%{transform:translate(0,0)}100%{transform:translate(-7px,5px)}}
+  #cross{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;pointer-events:none;opacity:0;transition:opacity .4s}
+  #cross.on{opacity:.65}
+  #cross::before,#cross::after{content:'';position:absolute;background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+  #cross::before{left:-9px;top:-0.5px;width:18px;height:1px}
+  #cross::after{top:-9px;left:-0.5px;width:1px;height:18px}
+  #cross.aim::before,#cross.aim::after{background:var(--amber);box-shadow:0 0 9px var(--amber)}
+  #cross.aim{transform:translate(-50%,-50%) scale(1.35) rotate(45deg)}
+  #chargeRing{position:fixed;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);z-index:4;pointer-events:none;opacity:0;transition:opacity .15s}
+  #chargeRing.on{opacity:1}
+  #chargeRing i{position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--amber) calc(var(--p,0)*1%), rgba(255,255,255,.07) 0);
+    -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px))}
+  #objArrow{position:fixed;left:0;top:0;z-index:5;pointer-events:none;color:var(--red);font-size:24px;text-shadow:0 0 12px var(--red);opacity:0;transition:opacity .25s}
+  #objArrow.on{opacity:.95}
+  #hitflash{position:fixed;inset:0;z-index:7;pointer-events:none;background:rgba(160,255,210,.5);opacity:0}
+  #hitflash.on{animation:flashout .55s ease forwards}
+  @keyframes flashout{0%{opacity:.5}100%{opacity:0}}
+  #counter.pop{animation:cpop .55s ease}
+  @keyframes cpop{0%{transform:scale(1)}28%{transform:scale(1.4)}100%{transform:scale(1)}}
+  #toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:6;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#cdd6e6;background:rgba(3,6,14,.6);border:1px solid rgba(79,248,210,.25);padding:9px 16px;border-radius:4px;opacity:0;transition:opacity .5s;pointer-events:none;text-align:center;max-width:80vw}
+  #toast.on{opacity:1}
+  #bound{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);text-shadow:0 0 10px var(--amber);opacity:0;transition:opacity .3s;pointer-events:none}
+  #bound.on{opacity:.9}
+  .hud{position:fixed;z-index:5;pointer-events:none;letter-spacing:.2em;text-transform:uppercase}
+  #brand{top:20px;left:24px;font-family:var(--syne);font-weight:800;letter-spacing:.12em;color:var(--cyan);font-size:16px}
+  #brand small{display:block;font-family:var(--mono);font-weight:400;font-size:9px;letter-spacing:.3em;color:var(--amber);opacity:.7;margin-top:3px}
+  #mission{top:22px;left:50%;transform:translateX(-50%);text-align:center;font-size:10px;color:var(--muted)}
+  #mission b{color:var(--ink)}
+  #counter{top:22px;right:24px;text-align:right;font-size:11px;color:var(--muted)}
+  #counter b{color:var(--green);font-size:15px;font-family:var(--syne)}
+  #controls{left:24px;bottom:20px;font-size:9px;line-height:1.9;color:var(--muted)}
+  #controls b{color:var(--cyan)}
+  #linkedin{position:fixed;right:24px;bottom:20px;z-index:6;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);text-decoration:none;padding:8px 14px;border:1px solid rgba(79,248,210,.3);border-radius:3px;background:rgba(3,6,14,.5);transition:.2s;pointer-events:auto}
+  #linkedin:hover{border-color:var(--cyan);color:var(--cyan)}
+
+  /* repair prompt */
+  #prompt{position:fixed;left:50%;bottom:20%;transform:translateX(-50%);z-index:6;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none;width:min(360px,80vw)}
+  #prompt.show{opacity:1}
+  #prompt .pt{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink);margin-bottom:9px}
+  #prompt .pt b{color:var(--amber)}
+  #pbar{height:5px;background:rgba(120,140,170,.22);border-radius:3px;overflow:hidden}
+  #pbar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--amber),var(--green));transition:width .05s linear}
+  #rbtn{display:none;margin:12px auto 0;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#04121a;background:var(--amber);padding:12px 26px;border-radius:4px;pointer-events:auto;user-select:none}
+
+  /* revealed system card */
+  #card{position:fixed;left:50%;bottom:8%;transform:translate(-50%,16px);z-index:4;width:min(620px,86vw);text-align:center;opacity:0;transition:opacity .5s,transform .5s;pointer-events:none}
+  #card.show{opacity:1;transform:translate(-50%,0)}
+  #card .eid{font-size:10px;letter-spacing:.4em;text-transform:uppercase;margin-bottom:9px;color:var(--green)}
+  #card h2{font-family:var(--syne);font-weight:800;font-size:clamp(24px,4.6vw,46px);letter-spacing:.04em;text-transform:uppercase;line-height:1;margin-bottom:11px;color:#eafcff;text-shadow:0 2px 30px rgba(0,0,0,.85)}
+  #card p{font-size:clamp(12px,1.5vw,15px);line-height:1.7;color:#c2cbe0;max-width:560px;margin:0 auto;text-shadow:0 1px 12px rgba(0,0,0,.9)}
+  #card .tags{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:11px}
+  #card .tag{font-size:9px;letter-spacing:.16em;text-transform:uppercase;padding:4px 9px;border:1px solid rgba(79,248,210,.3);color:var(--cyan);border-radius:2px;background:rgba(3,6,14,.45)}
+
+  /* hero + mission complete */
+  #hero,#win{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 90% at 50% 46%, rgba(3,5,12,.36), rgba(3,5,12,.9) 72%);transition:opacity 1s ease}
+  #hero.gone,#win:not(.show){opacity:0;pointer-events:none}
+  #win{z-index:9;opacity:0}
+  .hero-in{text-align:center;padding:0 6vw}
+  .hk{font-family:var(--mono);font-size:11px;letter-spacing:.42em;color:var(--amber);text-transform:uppercase;opacity:0;animation:hf .9s ease .2s forwards}
+  .hn{font-family:var(--syne);font-weight:800;font-size:clamp(54px,14vw,168px);letter-spacing:.03em;color:#eafcff;line-height:1;margin:14px 0 16px;display:flex;justify-content:center;perspective:600px;text-shadow:0 0 60px rgba(79,248,210,.4)}
+  .hn span{display:inline-block;opacity:0;transform:translateY(46px) rotateX(50deg);animation:hl 1s cubic-bezier(.2,.9,.25,1) forwards}
+  .hs{font-family:var(--mono);font-size:clamp(11px,1.6vw,15px);letter-spacing:.32em;color:var(--cyan);text-transform:uppercase;opacity:0;animation:hf 1s ease 1.1s forwards}
+  .hbrief{font-family:var(--mono);font-size:11px;line-height:1.9;letter-spacing:.18em;color:#aab4cc;text-transform:uppercase;margin:26px auto 0;max-width:460px;opacity:0;animation:hf 1s ease 1.5s forwards}
+  .hc{font-family:var(--mono);font-size:11px;letter-spacing:.28em;color:var(--ink);text-transform:uppercase;margin-top:30px;opacity:0;animation:hf 1s ease 1.9s forwards;border:1px solid rgba(79,248,210,.45);display:inline-block;padding:13px 26px;border-radius:3px;cursor:pointer;pointer-events:auto}
+  .hc small{display:block;color:var(--muted);font-size:9px;letter-spacing:.2em;margin-top:8px}
+  #win h1{font-family:var(--syne);font-weight:800;font-size:clamp(34px,8vw,90px);color:var(--green);text-shadow:0 0 50px rgba(70,240,138,.4);letter-spacing:.04em;margin-bottom:14px}
+  #win .wsub{font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--cyan);margin-bottom:20px}
+  #win p{font-size:13px;line-height:1.8;color:#c2cbe0;max-width:520px;margin:0 auto 24px}
+  #win a{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);text-decoration:none;padding:12px 24px;border:1px solid var(--cyan);border-radius:4px;display:inline-block;transition:.2s}
+  #win a:hover{background:rgba(79,248,210,.1);color:var(--cyan)}
+  @keyframes hf{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes hl{to{opacity:1;transform:translateY(0) rotateX(0)}}
+  #load{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);z-index:10;font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);transition:opacity .6s;text-align:center}
+  #load small{display:block;color:rgba(90,100,128,.6);font-size:8px;margin-top:6px}
+  @media (max-width:640px){#brand{font-size:13px}#controls{display:none}#rbtn{display:inline-block}}
+  /* ── plain "just read" view (instant, no 3D) ── */
+  #readToggle{position:fixed;top:23px;left:128px;z-index:19;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink);text-decoration:none;border:1px solid rgba(120,140,180,.35);padding:6px 11px;border-radius:3px;background:rgba(3,6,14,.5);cursor:pointer}
+  #readToggle:hover{color:var(--cyan);border-color:var(--cyan)}
+  #read{position:fixed;inset:0;z-index:20;overflow-y:auto;background:radial-gradient(120% 90% at 50% 0%, #0a1020, #03050c 70%);opacity:0;visibility:hidden;transition:opacity .5s}
+  #read.show{opacity:1;visibility:visible}
+  .rw{max-width:720px;margin:0 auto;padding:80px 26px 100px}
+  .rw .rback{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);text-decoration:none;cursor:pointer}
+  .rw .rback:hover{color:var(--cyan)}
+  .rw h1{font-family:var(--syne);font-weight:800;font-size:clamp(34px,6vw,56px);color:#eafcff;margin:26px 0 4px;letter-spacing:.02em}
+  .rw .sub{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan);margin-bottom:26px}
+  .rw h2{font-family:var(--syne);font-weight:800;font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:32px 0 12px}
+  .rw p{font-size:15px;line-height:1.85;color:#c8d2e6;margin-bottom:14px}
+  .rw p b,.rw li b{color:#eafcff}
+  .rw ul{list-style:none;margin:0 0 8px}
+  .rw li{font-size:14.5px;line-height:1.78;color:#c8d2e6;margin-bottom:13px;padding-left:15px;border-left:2px solid rgba(79,248,210,.3)}
+  .rw .foot{margin-top:30px;font-size:13px;color:var(--muted)}
+  .rw .foot a{color:var(--cyan);text-decoration:none;border-bottom:1px solid rgba(79,248,210,.4)}
+</style>
+</head>
+<body>
+  <script>window.__errs=[];addEventListener('error',e=>window.__errs.push((e.message||e.type)+' @ '+(e.filename||'').split('/').pop()+':'+(e.lineno||'?')));addEventListener('unhandledrejection',e=>window.__errs.push('reject: '+(e.reason&&e.reason.message||e.reason)));</script>
+  <canvas id="c"></canvas>
+  <div id="vig"></div><div id="grain"></div><div id="cross"></div>
+  <div id="chargeRing"><i></i></div><div id="objArrow">▲</div><div id="hitflash"></div>
+  <div id="toast"></div><div id="bound">◄ return to the station</div>
+  <div id="brand" class="hud">LIVIA<small>personal station</small></div>
+  <div id="mission" class="hud">your drone · <b>bring every system online</b></div>
+  <div id="counter" class="hud">systems online<br/><b id="cnum">0</b> / 5</div>
+  <div id="controls" class="hud"><b>W A S D</b> fly · <b>mouse</b> look · fly to a <b style="color:var(--red)">dark panel</b> · hold <b>E</b> to power it up</div>
+  <a id="linkedin" href="https://www.linkedin.com/in/liviapathakamudi/" target="_blank" rel="noopener">▸ LinkedIn</a>
+
+  <div id="prompt"><div class="pt"></div><div id="pbar"><i></i></div><div id="rbtn">hold to power up</div></div>
+  <div id="card"><div class="eid"></div><h2></h2><p></p><div class="tags"></div></div>
+
+  <div id="hero">
+    <div class="hero-in">
+      <div class="hk">// scout drone online · five systems are dark</div>
+      <h1 class="hn"><span style="animation-delay:.35s">L</span><span style="animation-delay:.47s">I</span><span style="animation-delay:.59s">V</span><span style="animation-delay:.71s">I</span><span style="animation-delay:.83s">A</span></h1>
+      <div class="hs">builder · founder</div>
+      <div class="hc" id="start">launch the drone &nbsp;▸<small>fly with mouse + W A S D · hold E to bring a system online</small></div>
+    </div>
+  </div>
+  <div id="win">
+    <div class="hero-in">
+      <h1>STATION ONLINE</h1>
+      <div class="wsub">every system humming · thanks for the hand</div>
+      <p>That's me — Livia. A builder before anything else: four ventures, 40+ ML projects, and a stubborn habit of starting before I'm ready. The throughline is simple — use whatever tool helps one real person, then make it bigger. Thanks for flying all the way out here. If any of it resonated, let's talk.</p>
+      <a href="https://www.linkedin.com/in/liviapathakamudi/" target="_blank" rel="noopener">let's talk ▸ linkedin.com/in/liviapathakamudi</a>
+    </div>
+  </div>
+  <div id="load"><b id="ldp">docking with station</b><small>loading the real ISS</small></div>
+
+  <a id="readToggle">read ▸</a>
+  <div id="read"><div class="rw">
+    <a class="rback" id="rback">◄ back to the station</a>
+    <h1>Livia Pathakamudi</h1>
+    <div class="sub">builder · founder</div>
+    <p>I'm a surviving twin. My mom says I got two brains — one mine, one my sister's. For a long time that was guilt; somewhere along the way I decided to make it purpose instead. I grew up in my dad's startup office — I'd skip school just to be there — and I've been building ever since. I use code for one reason: it's the fastest lever I've found to actually help a real person.</p>
+    <h2>What I've built</h2>
+    <ul>
+      <li><b>Lux Nova</b> — a foundation I started for my mom, so no family loses a child because a hospital didn't have the right equipment. We've put <b>$30,000+</b> of equipment into under-resourced hospitals and helped <b>200+ families</b> through high-risk pregnancies. At one event a woman hugged me in tears — she'd lost her first baby because the hospital lacked equipment, and told me how scared she'd been this time. I don't forget that.</li>
+      <li><b>BerriBasket</b> — a marketplace that pays farmers directly and cuts food waste. It won the <b>U.S. Congressional App Challenge</b>.</li>
+      <li><b>Liporice</b> — liposomal iron-fortified rice to fight anemia in Southeast Asia, where roughly half of women are anemic.</li>
+    </ul>
+    <h2>How I work</h2>
+    <p>Same pattern every time: use code to get a rough version working fast, prove it helps one person, then figure out how to make it bigger. I've shipped <b>40+ ML projects</b> in Python and built and improved real ML systems on messy historical data as an AI intern at WednesdAI Collective. I'd rather ship something imperfect and learn than wait for a plan I'm sure of.</p>
+    <h2>A few signs it's worked</h2>
+    <p>Congressional App Challenge win (and a note from Rep. Ro Khanna), a <b>1517 Medici</b> grant ($10K AWS + $1K), two-time <b>Conrad Challenge Innovator</b> at Space Center Houston, Top 30 in the Blue Ocean Challenge, and full rides to two selective programs I finished with honors.</p>
+    <h2>What's next</h2>
+    <p>I want to get better at the part I'm worst at: taking something that works for one person and turning it into something that lasts. Harder problems, sharper people, less of me trying to do it all alone.</p>
+    <div class="foot">Reach me: <a href="https://www.linkedin.com/in/liviapathakamudi/" target="_blank" rel="noopener">linkedin.com/in/liviapathakamudi</a></div>
+  </div></div>
+
+  <script>
+  /* "just read" toggle — plain script so it works even if the 3D never loads */
+  (function(){
+    var read=document.getElementById('read'),
+        t=document.getElementById('readToggle'),
+        b=document.getElementById('rback');
+    function open(){ read.classList.add('show'); read.scrollTop=0; if(document.exitPointerLock) document.exitPointerLock(); }
+    function close(){ read.classList.remove('show'); }
+    if(t) t.addEventListener('click', open);
+    if(b) b.addEventListener('click', close);
+    document.addEventListener('keydown', function(e){
+      if(e.key==='Escape'){ if(read.classList.contains('show')) close(); }
+      else if(e.key==='r'||e.key==='R'){ read.classList.contains('show') ? close() : open(); }
+    });
+  })();
+  </script>
+
+  <script type="importmap">
+  { "imports": { "three": "/assets/three.module.js" }}
+  </script>
+
+  <script type="module">
+  import * as THREE from "three";
+  import { GLTFLoader } from "/assets/jsm/loaders/GLTFLoader.js";
+
+  const isMobile = matchMedia('(max-width:768px)').matches;
+  const lowEnd = isMobile || (navigator.hardwareConcurrency||8) <= 4;
+  const CY=0x4ff8d2, RED=0xff5a3a, GREEN=0x46f08a;
+  const SYS=[
+    {name:'origin core', eid:'01', body:"I'm a surviving twin. My mom says I got two brains — one mine, one my sister's — and for years that was mostly guilt. At some point I turned it into purpose. I started building young (my dad's startup office was my playground), and I've used code ever since for one reason: it's the fastest lever I've found to actually help a real person.", tags:['surviving twin','builder since day one']},
+    {name:'ventures bay', eid:'02', body:"Three of the ventures I've put real time into. BerriBasket, a farmer marketplace that won the U.S. Congressional App Challenge. Lux Nova, a foundation that's put $30,000+ of equipment into under-resourced hospitals for 200+ families. Liporice, iron-fortified rice for anemia in South Asia.", tags:['BerriBasket','Lux Nova','Liporice']},
+    {name:'experience relay', eid:'03', body:"The pattern's always the same: use code to get a rough version working fast, prove it helps one person, then make it bigger. I've shipped 40+ ML projects in Python and built real ML systems on messy data as an AI intern at WednesdAI Collective.", tags:['40+ ML projects','WednesdAI','ship → learn → scale']},
+    {name:'recognition reactor', eid:'04', body:"A few signs it's worked: the Congressional App Challenge win and a note from Rep. Ro Khanna, a 1517 Medici grant ($10K AWS + $1K), two-time Conrad Challenge Innovator at Space Center Houston, Top 30 in the Blue Ocean Challenge, and full rides to two selective programs I finished with honors.", tags:['1517 Medici','Conrad Innovator ×2','Blue Ocean Top 30']},
+    {name:'contact array', eid:'05', body:"I'm happiest building things that help real people, and I'm after harder problems and sharper people. (And yes — I'd rather make a 3D world you fly a drone through than a page you scroll.) If any of it resonates, let's talk.", tags:['open to build','get in touch']},
+  ];
+
+  const canvas=document.getElementById('c');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:!lowEnd,powerPreference:'high-performance',preserveDrawingBuffer:true});
+  const DPR=Math.min(devicePixelRatio||1, lowEnd?1.5:2);
+  renderer.setPixelRatio(DPR); renderer.setSize(innerWidth||1,innerHeight||1);
+  renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.06; renderer.outputColorSpace=THREE.SRGBColorSpace;
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(74,(innerWidth||1)/(innerHeight||1),0.1,4000); camera.rotation.order='YXZ';
+
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  let envReady=false, modelReady=false;
+  new THREE.TextureLoader().load('assets/milkyway.jpg',(tex)=>{ tex.mapping=THREE.EquirectangularReflectionMapping; tex.colorSpace=THREE.SRGBColorSpace;
+    scene.background=tex; scene.backgroundIntensity=0.85; scene.environment=pmrem.fromEquirectangular(tex).texture; envReady=true; rdy(); },undefined,()=>{envReady=true;rdy();});
+  { const k=new THREE.DirectionalLight(0xfff4e2,2.6); k.position.set(80,60,120); scene.add(k);
+    const rl=new THREE.DirectionalLight(0x88b8ff,1.4); rl.position.set(-90,20,-80); scene.add(rl); }
+  scene.add(new THREE.HemisphereLight(0x223044,0x05060c,0.55));
+  const flash=new THREE.PointLight(0xdfeaff,2.2,60); scene.add(flash);
+
+  // the real ISS
+  let station=null, halfX=60;
+  new GLTFLoader().load('assets/iss_small.glb',(g)=>{
+    station=g.scene;
+    let b=new THREE.Box3().setFromObject(station), s=b.getSize(new THREE.Vector3());
+    if(s.z>s.x&&s.z>=s.y)station.rotation.y=Math.PI/2; else if(s.y>s.x&&s.y>=s.z)station.rotation.z=Math.PI/2;
+    station.updateMatrixWorld(true); b=new THREE.Box3().setFromObject(station); s=b.getSize(new THREE.Vector3());
+    station.scale.setScalar(150/Math.max(s.x,s.y,s.z));
+    b=new THREE.Box3().setFromObject(station); const ctr=b.getCenter(new THREE.Vector3()); s=b.getSize(new THREE.Vector3());
+    station.position.sub(ctr); halfX=s.x/2;
+    station.traverse(o=>{ if(o.isMesh&&o.material){o.material.envMapIntensity=1.2; if(o.material.roughness>0.95)o.material.roughness=0.7;} });
+    scene.add(station);
+    SYS.forEach((sy,i)=>{ const t=i/(SYS.length-1); sy.pos=new THREE.Vector3(halfX*0.82 - t*halfX*1.64, (i%2?1:-1)*5, 9); buildFault(sy); });
+    camera.position.set(halfX*0.92,3,22); yaw=Math.PI; pitch=-0.05; modelReady=true; rdy();
+  },(xhr)=>{ const l=document.getElementById('ldp'); if(l&&xhr.total) l.textContent='docking with station · '+Math.round(xhr.loaded/xhr.total*100)+'%'; },()=>{modelReady=true;rdy();});
+  function rdy(){ if(envReady&&modelReady){ const l=document.getElementById('load'); if(l)l.style.opacity='0'; } }
+
+  // a damaged system = red sparking node; repaired = steady green
+  function buildFault(sy){
+    sy.core=new THREE.Mesh(new THREE.IcosahedronGeometry(1.3,0), new THREE.MeshStandardMaterial({color:0x140404,emissive:RED,emissiveIntensity:2.4,metalness:.6,roughness:.4})); sy.core.position.copy(sy.pos); scene.add(sy.core);
+    sy.ring=new THREE.Mesh(new THREE.TorusGeometry(2.6,0.1,10,40), new THREE.MeshBasicMaterial({color:RED,transparent:true,opacity:.9})); sy.ring.material.fog=false; sy.ring.position.copy(sy.pos); scene.add(sy.ring);
+    sy.light=new THREE.PointLight(RED,2.0,30); sy.light.position.copy(sy.pos); scene.add(sy.light);
+    const sp=new Float32Array(18*3); for(let i=0;i<18;i++){const a=Math.random()*6.28,r=1.6+Math.random()*1.4,e=(Math.random()-.5)*2;sp[i*3]=sy.pos.x+Math.cos(a)*r;sp[i*3+1]=sy.pos.y+e;sp[i*3+2]=sy.pos.z+Math.sin(a)*r;}
+    const sg=new THREE.BufferGeometry(); sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+    sy.sparks=new THREE.Points(sg,new THREE.PointsMaterial({color:0xffd060,size:0.22,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false})); sy.sparks.material.fog=false; scene.add(sy.sparks);
+    // tall beacon pillar — visible from across the station so you can navigate to it
+    sy.beam=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.8,46,12,1,true), new THREE.MeshBasicMaterial({color:RED,transparent:true,opacity:.28,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,depthWrite:false}));
+    sy.beam.material.fog=false; sy.beam.position.set(sy.pos.x,sy.pos.y+20,sy.pos.z); scene.add(sy.beam);
+    sy.repaired=false; sy.progress=0;
+  }
+  function repair(sy){ sy.repaired=true;
+    sy.core.material.emissive.setHex(GREEN); sy.core.material.emissiveIntensity=1.6;
+    sy.ring.material.color.setHex(GREEN); sy.light.color.setHex(GREEN); sy.light.intensity=1.4;
+    if(sy.beam){ sy.beam.material.color.setHex(GREEN); sy.beam.material.opacity=0.16; }
+    if(sy.sparks){scene.remove(sy.sparks);sy.sparks=null;}
+    spawnShock(sy.pos,0x9bffd0);
+    hitflash.classList.remove('on'); void hitflash.offsetWidth; hitflash.classList.add('on');
+    counterEl.classList.remove('pop'); void counterEl.offsetWidth; counterEl.classList.add('pop');
+    setCharge(false); sfxPower();
+    showCard(sy); const n=SYS.filter(x=>x.repaired).length; cnum.textContent=n;
+    if(n===SYS.length){ sfxWin(); setTimeout(()=>document.getElementById('win').classList.add('show'),1100); }
+  }
+
+  // (postprocessing removed — fully local, zero CDN; emissive faults still glow via tone mapping)
+  let composer=null;
+
+  // ── game-feel: WebAudio SFX (no asset files), shockwaves, HUD refs ──
+  let actx=null, chargeOsc=null;
+  function initAudio(){ if(actx)return; try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} }
+  function tone(f,dur,type,vol,to){ if(!actx)return; const o=actx.createOscillator(),g=actx.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,actx.currentTime); if(to)o.frequency.exponentialRampToValueAtTime(to,actx.currentTime+dur); g.gain.setValueAtTime(vol||0.12,actx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur); o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime+dur+0.02); }
+  function sfxPower(){ tone(523,0.12,'triangle',0.16); setTimeout(()=>tone(784,0.16,'triangle',0.15),90); setTimeout(()=>tone(1046,0.5,'sine',0.13),200); }
+  function sfxWin(){ [523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone(f,0.6,'triangle',0.13),i*130)); }
+  function setCharge(on,p){ if(!actx)return; if(on){ if(!chargeOsc){ chargeOsc=actx.createOscillator(); const g=actx.createGain(); g.gain.value=0.05; chargeOsc.type='sawtooth'; chargeOsc.connect(g).connect(actx.destination); chargeOsc.start(); } chargeOsc.frequency.setValueAtTime(180+p*640,actx.currentTime); } else if(chargeOsc){ try{chargeOsc.stop();}catch(e){} chargeOsc=null; } }
+  const shocks=[];
+  function spawnShock(pos,color){ const m=new THREE.Mesh(new THREE.TorusGeometry(1,0.14,8,40), new THREE.MeshBasicMaterial({color:color,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false})); m.material.fog=false; m.position.copy(pos); scene.add(m); shocks.push({m,life:0}); }
+  const hitflash=document.getElementById('hitflash'), objArrow=document.getElementById('objArrow'), chargeRing=document.getElementById('chargeRing'), toast=document.getElementById('toast'), bound=document.getElementById('bound'), counterEl=document.getElementById('counter');
+  const _ndc=new THREE.Vector3(), _toS=new THREE.Vector3();
+
+  // controls
+  let yaw=Math.PI,pitch=0; const vel=new THREE.Vector3(); const keys={};
+  const cross=document.getElementById('cross'), hero=document.getElementById('hero');
+  let heroGone=false; function hideHero(){if(!heroGone){heroGone=true;hero.classList.add('gone');cross.classList.add('on');}}
+  addEventListener('keydown',e=>{keys[e.code]=true; if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();});
+  addEventListener('keyup',e=>{keys[e.code]=false;});
+  function launch(){hideHero(); initAudio(); if(!isMobile&&document.pointerLockElement!==canvas)canvas.requestPointerLock();
+    toast.textContent='five systems are dark — follow the red beacons, aim, and hold E to power each up'; toast.classList.add('on'); setTimeout(()=>toast.classList.remove('on'),6500); }
+  canvas.addEventListener('click',launch); document.getElementById('start').addEventListener('click',launch);
+  let dragging=false, lx=0, ly=0;
+  canvas.addEventListener('mousedown',e=>{ if(document.pointerLockElement!==canvas){ dragging=true; lx=e.clientX; ly=e.clientY; canvas.style.cursor='grabbing'; } });
+  addEventListener('mouseup',()=>{ dragging=false; canvas.style.cursor=''; });
+  document.addEventListener('mousemove',e=>{
+    if(document.pointerLockElement===canvas){ yaw-=e.movementX*0.0022; pitch-=e.movementY*0.0022; }
+    else if(dragging){ yaw-=(e.clientX-lx)*0.0042; pitch-=(e.clientY-ly)*0.0042; lx=e.clientX; ly=e.clientY; }
+    pitch=Math.max(-1.45,Math.min(1.45,pitch));
+  });
+  let tl=null, mobileRepair=false;
+  if(isMobile){ canvas.addEventListener('touchstart',e=>{tl=e.touches[0];hideHero();},{passive:true});
+    canvas.addEventListener('touchmove',e=>{const t=e.touches[0];if(tl){yaw-=(t.clientX-tl.clientX)*0.005;pitch-=(t.clientY-tl.clientY)*0.005;pitch=Math.max(-1.45,Math.min(1.45,pitch));}tl=t;},{passive:true});
+    canvas.addEventListener('touchend',()=>tl=null,{passive:true});
+    const rb=document.getElementById('rbtn'); rb.addEventListener('touchstart',e=>{e.preventDefault();mobileRepair=true;},{passive:false}); rb.addEventListener('touchend',()=>mobileRepair=false); }
+
+  // HUD
+  const cnum=document.getElementById('cnum');
+  const prompt=document.getElementById('prompt'), pt=prompt.querySelector('.pt'), pbar=document.querySelector('#pbar i');
+  const card=document.getElementById('card'),cE=card.querySelector('.eid'),cH=card.querySelector('h2'),cP=card.querySelector('p'),cT=card.querySelector('.tags');
+  let cardT=0;
+  function showCard(sy){ cE.textContent='system '+sy.eid+' · online — '+sy.name; cH.textContent=sy.name.split(' ')[0]; cP.textContent=sy.body; cT.innerHTML=sy.tags.map(t=>'<span class="tag">'+t+'</span>').join(''); card.classList.add('show'); cardT=9; }
+
+  // render
+  const clock=new THREE.Clock(); const fwd=new THREE.Vector3(),right=new THREE.Vector3(),up=new THREE.Vector3(0,1,0); const REPAIR_T=1.9;
+  function frame(dt,t){
+    camera.rotation.set(pitch,yaw,0); camera.getWorldDirection(fwd); right.crossVectors(fwd,up).normalize();
+    const acc=new THREE.Vector3();
+    if(keys.KeyW||keys.ArrowUp)acc.add(fwd); if(keys.KeyS||keys.ArrowDown)acc.sub(fwd);
+    if(keys.KeyD||keys.ArrowRight)acc.add(right); if(keys.KeyA||keys.ArrowLeft)acc.sub(right);
+    if(keys.Space)acc.y+=1; if(keys.ShiftLeft||keys.ShiftRight)acc.y-=1;
+    if(isMobile&&heroGone)acc.add(fwd).multiplyScalar(0.75);
+    vel.lerp(acc.lengthSq()>0?acc.normalize().multiplyScalar(22):new THREE.Vector3(),0.08);
+    camera.position.addScaledVector(vel,dt); flash.position.copy(camera.position);
+
+    // soft boundary — gently keep you near the station
+    const home=camera.position.length();
+    if(home>210){ camera.position.multiplyScalar(1-Math.min(0.03,(home-210)/home*0.06)); bound.classList.add('on'); } else bound.classList.remove('on');
+
+    // beacons flicker + find nearest offline system
+    let target=null,nd=1e9;
+    for(const sy of SYS){ if(!sy.pos)continue; const d=camera.position.distanceTo(sy.pos);
+      if(!sy.repaired){ sy.light.intensity=2.0*(0.7+Math.random()*0.6); sy.core.scale.setScalar(1+Math.sin(t*6)*0.08); sy.ring.rotation.z+=dt*1.4; sy.ring.lookAt(camera.position);
+        if(sy.beam) sy.beam.material.opacity=0.22+Math.sin(t*4+sy.pos.x)*0.13;
+        if(sy.sparks){ const a=sy.sparks.geometry.attributes.position; for(let i=0;i<a.count;i++){a.array[i*3+1]=sy.pos.y+Math.sin(t*8+i)*1.0;} a.needsUpdate=true; sy.sparks.material.opacity=0.4+Math.random()*0.5; }
+        if(d<nd){nd=d;target=sy;} }
+      else { sy.ring.rotation.z+=dt*0.4; sy.ring.lookAt(camera.position); }
+    }
+
+    // interaction: be in range AND aimed, then hold E to charge
+    let charging=false;
+    if(target){
+      _toS.copy(target.pos).sub(camera.position).normalize();
+      const aimed=fwd.dot(_toS)>0.93, inRange=nd<17, holding=keys.KeyE||mobileRepair;
+      cross.classList.toggle('aim', inRange&&aimed);
+      if(inRange){ prompt.classList.add('show');
+        if(holding&&aimed){ charging=true; target.progress+=dt/REPAIR_T; if(target.progress>=1){target.progress=1;repair(target);} }
+        else target.progress=Math.max(0,target.progress-dt*0.7);
+        pt.innerHTML = charging?('powering up <b>'+target.name+'</b>…'):(aimed?('aim locked — hold <b>E</b> · <b>'+target.name+'</b>'):('look at the <b>'+target.name+'</b> panel'));
+        pbar.style.width=(target.progress*100)+'%';
+        chargeRing.classList.toggle('on',target.progress>0); chargeRing.style.setProperty('--p',(target.progress*100).toFixed(0));
+      } else { prompt.classList.remove('show'); chargeRing.classList.remove('on'); }
+    } else { prompt.classList.remove('show'); chargeRing.classList.remove('on'); cross.classList.remove('aim'); }
+    setCharge(charging, target?target.progress:0);
+
+    // off-screen arrow points to the nearest offline system
+    if(target){ _ndc.copy(target.pos).project(camera); let nx=_ndc.x,ny=_ndc.y; const behind=_ndc.z>1; if(behind){nx=-nx;ny=-ny;}
+      if(!behind && Math.abs(nx)<0.9 && Math.abs(ny)<0.82){ objArrow.classList.remove('on'); }
+      else { const ang=Math.atan2(-ny,nx), cx=innerWidth/2, cy=innerHeight/2, mx=cx-50, my=cy-64, dx=Math.cos(ang), dy=Math.sin(ang); const dd=Math.min(Math.abs(dx)>1e-3?mx/Math.abs(dx):1e9, Math.abs(dy)>1e-3?my/Math.abs(dy):1e9);
+        objArrow.style.left=(cx+dx*dd)+'px'; objArrow.style.top=(cy+dy*dd)+'px'; objArrow.style.transform='translate(-50%,-50%) rotate('+(ang+Math.PI/2)+'rad)'; objArrow.classList.add('on'); }
+    } else objArrow.classList.remove('on');
+
+    // shockwaves
+    for(let i=shocks.length-1;i>=0;i--){ const s=shocks[i]; s.life+=dt; const k=s.life/0.6; s.m.scale.setScalar(1+k*7); s.m.material.opacity=Math.max(0,0.9*(1-k)); s.m.lookAt(camera.position); if(k>=1){scene.remove(s.m);shocks.splice(i,1);} }
+
+    if(cardT>0){cardT-=dt; if(cardT<=0)card.classList.remove('show');}
+    renderer.render(scene,camera);
+  }
+  function animate(){requestAnimationFrame(animate);const dt=Math.min(0.05,clock.getDelta());frame(dt,clock.elapsedTime);}
+  setTimeout(()=>{const l=document.getElementById('load');if(l)l.style.opacity='0';},22000);
+  window.__cap=(i)=>{ const sy=SYS[i]; if(sy&&sy.pos){camera.position.set(sy.pos.x+8,sy.pos.y+3,sy.pos.z+12);yaw=Math.PI+0.2;pitch=-0.1;} frame(0.001,1); };
+  function fit(){const w=innerWidth||1,h=innerHeight||1;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(composer)composer.setSize(w,h);}
+  addEventListener('resize',fit); try{new ResizeObserver(fit).observe(document.documentElement);}catch(e){}
+  animate();
+  </script>
+</body>
+</html>
