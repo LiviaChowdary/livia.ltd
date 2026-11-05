@@ -104,7 +104,8 @@
   @keyframes hl{to{opacity:1;transform:translateY(0) rotateX(0)}}
   #load{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);z-index:10;font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);transition:opacity .6s;text-align:center}
   #load small{display:block;color:rgba(90,100,128,.6);font-size:8px;margin-top:6px}
-  @media (max-width:640px){#brand{font-size:13px}#controls,#mission{display:none}#rbtn{display:inline-block}#load{bottom:76px}}
+  @media (max-width:640px){#brand{font-size:13px}#controls,#mission{display:none}#load{bottom:76px}}
+  @media (pointer:coarse){#rbtn{display:inline-block}#controls{display:none}}
   #win .keep{display:block;margin:18px auto 0;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);cursor:pointer;background:none;border:0;font-family:var(--mono)}
   #win .keep:hover{color:var(--cyan)}
   /* ── plain "just read" view (instant, no 3D) ── */
@@ -141,7 +142,7 @@
   <div id="controls" class="hud"><b>W A S D</b> fly · <b>mouse</b> look · fly to a <b style="color:var(--red)">dark panel</b> · hold <b>E</b> to power it up</div>
   <a id="linkedin" href="https://www.linkedin.com/in/liviapathakamudi/" target="_blank" rel="noopener">▸ LinkedIn</a>
 
-  <div id="prompt"><div class="pt"></div><div id="pbar"><i></i></div><div id="rbtn">hold to power up</div></div>
+  <div id="prompt"><div class="pt"></div><div id="pbar"><i></i></div><div id="rbtn">power up</div></div>
   <div id="card"><div class="eid"></div><h2></h2><p></p><div class="tags"></div></div>
 
   <div id="hero">
@@ -209,7 +210,8 @@
   import * as THREE from "three";
   import { GLTFLoader } from "/assets/jsm/loaders/GLTFLoader.js";
 
-  const isMobile = matchMedia('(max-width:768px)').matches;
+  // touch wording and controls only on real touchscreens; a narrow laptop window still uses the keyboard
+  const isMobile = matchMedia('(pointer:coarse)').matches;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let shake=0, hitStop=0, bank=0, wasLocked=false;
   const lowEnd = isMobile || (navigator.hardwareConcurrency||8) <= 4;
@@ -311,7 +313,7 @@
   addEventListener('keydown',e=>{keys[e.code]=true; if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();});
   addEventListener('keyup',e=>{keys[e.code]=false;});
   function launch(){hideHero(); initAudio(); if(!isMobile&&document.pointerLockElement!==canvas){ const pl=canvas.requestPointerLock(); if(pl&&pl.catch)pl.catch(()=>{}); }
-    toast.textContent=isMobile?'five systems are dark. Hold a finger down to fly, steer toward the red beacons, then hold the button to power each one up':'five systems are dark. Follow the red beacons, aim at one, and hold E to power it up'; toast.classList.add('on'); setTimeout(()=>toast.classList.remove('on'),6500); }
+    toast.textContent=isMobile?'five systems are dark. Hold a finger down to fly, steer toward the red beacons, then hold POWER UP to bring each one online':'five systems are dark. Follow the red beacons, aim at one, and hold E to power it up'; toast.classList.add('on'); setTimeout(()=>toast.classList.remove('on'),6500); }
   canvas.addEventListener('click',launch); const startEl=document.getElementById('start'); startEl.addEventListener('click',launch); startEl.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); launch(); } });
   let dragging=false, lx=0, ly=0;
   canvas.addEventListener('mousedown',e=>{ if(document.pointerLockElement!==canvas){ dragging=true; lx=e.clientX; ly=e.clientY; canvas.style.cursor='grabbing'; } });
@@ -322,7 +324,7 @@
     pitch=Math.max(-1.45,Math.min(1.45,pitch));
   });
   let tl=null, mobileRepair=false;
-  if(isMobile){ const h=document.getElementById('starthint'); if(h)h.textContent='hold a finger down to fly · hold the button to bring a system online'; }
+  if(isMobile){ const h=document.getElementById('starthint'); if(h)h.textContent='hold a finger down to fly · hold POWER UP to bring a system online'; }
   document.getElementById('keepFlying').addEventListener('click',()=>document.getElementById('win').classList.remove('show'));
   if(isMobile){ canvas.addEventListener('touchstart',e=>{tl=e.touches[0];hideHero();},{passive:true});
     canvas.addEventListener('touchmove',e=>{const t=e.touches[0];if(tl){yaw-=(t.clientX-tl.clientX)*0.005;pitch-=(t.clientY-tl.clientY)*0.005;pitch=Math.max(-1.45,Math.min(1.45,pitch));}tl=t;},{passive:true});
@@ -378,7 +380,7 @@
       if(inRange){ prompt.classList.add('show');
         if(holding&&aimed){ charging=true; shake=Math.max(shake,target.progress*0.35); target.progress+=dt/REPAIR_T; if(target.progress>=1){target.progress=1;repair(target);} }
         else target.progress=Math.max(0,target.progress-dt*0.7);
-        pt.innerHTML = charging?('powering up <b>'+target.name+'</b>…'):(aimed?('locked on · hold <b>'+(isMobile?'the button':'E')+'</b> to power up the <b>'+target.name+'</b>'):('look at the <b>'+target.name+'</b> panel'));
+        pt.innerHTML = charging?('powering up <b>'+target.name+'</b>…'):(aimed?('locked on · hold <b>'+(isMobile?'POWER UP':'E')+'</b> to power up the <b>'+target.name+'</b>'):('look at the <b>'+target.name+'</b> panel'));
         pbar.style.width=(target.progress*100)+'%';
         chargeRing.classList.toggle('on',target.progress>0); chargeRing.style.setProperty('--p',(target.progress*100).toFixed(0));
       } else { prompt.classList.remove('show'); chargeRing.classList.remove('on'); }
