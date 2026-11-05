@@ -209,6 +209,7 @@
   <script type="module">
   import * as THREE from "three";
   import { GLTFLoader } from "/assets/jsm/loaders/GLTFLoader.js";
+  import { MeshoptDecoder } from "/assets/jsm/libs/meshopt_decoder.module.js";
 
   // touch wording and controls only on real touchscreens; a narrow laptop window still uses the keyboard
   const isMobile = matchMedia('(pointer:coarse)').matches;
@@ -245,7 +246,7 @@
 
   // the real ISS
   let station=null, halfX=60;
-  new GLTFLoader().load('assets/iss_small.glb',(g)=>{
+  new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load('assets/iss_small.glb',(g)=>{
     station=g.scene;
     let b=new THREE.Box3().setFromObject(station), s=b.getSize(new THREE.Vector3());
     if(s.z>s.x&&s.z>=s.y)station.rotation.y=Math.PI/2; else if(s.y>s.x&&s.y>=s.z)station.rotation.z=Math.PI/2;
