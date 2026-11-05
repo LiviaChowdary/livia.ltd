@@ -3,9 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>livia — personal station</title>
-<meta name="description" content="Livia — builder, founder, data scientist. 40+ ML projects and four ventures across health, food, climate, and data. Fly out and explore her station." />
+<title>Livia · personal station</title>
+<meta name="description" content="Livia Pathakamudi builds things with code. 40+ ML projects and four ventures in health, food, climate and data. Fly a drone around her space station to read about them." />
 <meta name="theme-color" content="#03050c" />
+<meta property="og:title" content="Livia · personal station" />
+<meta property="og:description" content="Fly a drone around a space station and bring five systems online to read about Livia's work." />
+<meta property="og:url" content="https://livia.ltd" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2303050c'/%3E%3Ctext x='16' y='23' font-family='Arial Black,sans-serif' font-size='20' font-weight='900' text-anchor='middle' fill='%234ff8d2'%3EL%3C/text%3E%3C/svg%3E" />
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
   :root{ --cyan:#4ff8d2; --amber:#f6c744; --red:#ff5a3a; --green:#46f08a; --bg:#03050c; --ink:#e9f3ff; --muted:#5a6480;
@@ -74,6 +80,7 @@
   #hero,#win{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 90% at 50% 46%, rgba(3,5,12,.36), rgba(3,5,12,.9) 72%);transition:opacity 1s ease}
   #hero.gone,#win:not(.show){opacity:0;pointer-events:none}
   #win{z-index:9;opacity:0}
+  #win.show{opacity:1}
   .hero-in{text-align:center;padding:0 6vw}
   .hk{font-family:var(--mono);font-size:11px;letter-spacing:.42em;color:var(--amber);text-transform:uppercase;opacity:0;animation:hf .9s ease .2s forwards}
   .hn{font-family:var(--syne);font-weight:800;font-size:clamp(54px,14vw,168px);letter-spacing:.03em;color:#eafcff;line-height:1;margin:14px 0 16px;display:flex;justify-content:center;perspective:600px;text-shadow:0 0 60px rgba(79,248,210,.4)}
@@ -91,14 +98,16 @@
   @keyframes hl{to{opacity:1;transform:translateY(0) rotateX(0)}}
   #load{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);z-index:10;font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);transition:opacity .6s;text-align:center}
   #load small{display:block;color:rgba(90,100,128,.6);font-size:8px;margin-top:6px}
-  @media (max-width:640px){#brand{font-size:13px}#controls{display:none}#rbtn{display:inline-block}}
+  @media (max-width:640px){#brand{font-size:13px}#controls,#mission{display:none}#rbtn{display:inline-block}#load{bottom:76px}}
+  #win .keep{display:block;margin:18px auto 0;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);cursor:pointer;background:none;border:0;font-family:var(--mono)}
+  #win .keep:hover{color:var(--cyan)}
   /* ── plain "just read" view (instant, no 3D) ── */
-  #readToggle{position:fixed;top:23px;left:128px;z-index:19;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink);text-decoration:none;border:1px solid rgba(120,140,180,.35);padding:6px 11px;border-radius:3px;background:rgba(3,6,14,.5);cursor:pointer}
+  #readToggle{font-family:var(--mono);position:fixed;top:66px;left:24px;z-index:19;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink);text-decoration:none;border:1px solid rgba(120,140,180,.35);padding:6px 11px;border-radius:3px;background:rgba(3,6,14,.5);cursor:pointer}
   #readToggle:hover{color:var(--cyan);border-color:var(--cyan)}
   #read{position:fixed;inset:0;z-index:20;overflow-y:auto;background:radial-gradient(120% 90% at 50% 0%, #0a1020, #03050c 70%);opacity:0;visibility:hidden;transition:opacity .5s}
   #read.show{opacity:1;visibility:visible}
   .rw{max-width:720px;margin:0 auto;padding:80px 26px 100px}
-  .rw .rback{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);text-decoration:none;cursor:pointer}
+  .rw .rback{background:none;border:0;font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);text-decoration:none;cursor:pointer}
   .rw .rback:hover{color:var(--cyan)}
   .rw h1{font-family:var(--syne);font-weight:800;font-size:clamp(34px,6vw,56px);color:#eafcff;margin:26px 0 4px;letter-spacing:.02em}
   .rw .sub{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan);margin-bottom:26px}
@@ -108,6 +117,8 @@
   .rw ul{list-style:none;margin:0 0 8px}
   .rw li{font-size:14.5px;line-height:1.78;color:#c8d2e6;margin-bottom:13px;padding-left:15px;border-left:2px solid rgba(79,248,210,.3)}
   .rw .foot{margin-top:30px;font-size:13px;color:var(--muted)}
+  #start:focus-visible,#readToggle:focus-visible,.rback:focus-visible,#win a:focus-visible,#linkedin:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+  @media (prefers-reduced-motion:reduce){#grain{animation:none}.hn span,.hk,.hs,.hc{animation-duration:.01s!important;animation-delay:0s!important}}
   .rw .foot a{color:var(--cyan);text-decoration:none;border-bottom:1px solid rgba(79,248,210,.4)}
 </style>
 </head>
@@ -116,7 +127,7 @@
   <canvas id="c"></canvas>
   <div id="vig"></div><div id="grain"></div><div id="cross"></div>
   <div id="chargeRing"><i></i></div><div id="objArrow">▲</div><div id="hitflash"></div>
-  <div id="toast"></div><div id="bound">◄ return to the station</div>
+  <div id="toast"></div><div id="bound">◄ head back to the station</div>
   <div id="brand" class="hud">LIVIA<small>personal station</small></div>
   <div id="mission" class="hud">your drone · <b>bring every system online</b></div>
   <div id="counter" class="hud">systems online<br/><b id="cnum">0</b> / 5</div>
@@ -131,38 +142,39 @@
       <div class="hk">// scout drone online · five systems are dark</div>
       <h1 class="hn"><span style="animation-delay:.35s">L</span><span style="animation-delay:.47s">I</span><span style="animation-delay:.59s">V</span><span style="animation-delay:.71s">I</span><span style="animation-delay:.83s">A</span></h1>
       <div class="hs">builder · founder</div>
-      <div class="hc" id="start">launch the drone &nbsp;▸<small>fly with mouse + W A S D · hold E to bring a system online</small></div>
+      <div class="hc" id="start" role="button" tabindex="0">launch the drone &nbsp;▸<small id="starthint">fly with mouse + W A S D · hold E to bring a system online</small></div>
     </div>
   </div>
   <div id="win">
     <div class="hero-in">
       <h1>STATION ONLINE</h1>
-      <div class="wsub">every system humming · thanks for the hand</div>
-      <p>That's me — Livia. A builder before anything else: four ventures, 40+ ML projects, and a stubborn habit of starting before I'm ready. The throughline is simple — use whatever tool helps one real person, then make it bigger. Thanks for flying all the way out here. If any of it resonated, let's talk.</p>
-      <a href="https://www.linkedin.com/in/liviapathakamudi/" target="_blank" rel="noopener">let's talk ▸ linkedin.com/in/liviapathakamudi</a>
+      <div class="wsub">all five systems running · thanks for the help</div>
+      <p>That's me, Livia. Four ventures, 40+ ML projects, and a habit of starting before I'm ready. You flew a drone across a space station to read my résumé, which is more effort than most recruiters put in. Come say hi.</p>
+      <a href="https://www.linkedin.com/in/liviapathakamudi/" target="_blank" rel="noopener">message me on LinkedIn ▸</a>
+      <button class="keep" id="keepFlying">or keep flying</button>
     </div>
   </div>
   <div id="load"><b id="ldp">docking with station</b><small>loading the real ISS</small></div>
 
-  <a id="readToggle">read ▸</a>
+  <button id="readToggle" type="button">read ▸</button>
   <div id="read"><div class="rw">
-    <a class="rback" id="rback">◄ back to the station</a>
+    <button class="rback" id="rback" type="button">◄ back to the station</button>
     <h1>Livia Pathakamudi</h1>
     <div class="sub">builder · founder</div>
-    <p>I'm a surviving twin. My mom says I got two brains — one mine, one my sister's. For a long time that was guilt; somewhere along the way I decided to make it purpose instead. I grew up in my dad's startup office — I'd skip school just to be there — and I've been building ever since. I use code for one reason: it's the fastest lever I've found to actually help a real person.</p>
+    <p>I'm a surviving twin. My mom says I got two brains, one mine and one my sister's. I grew up in my dad's startup office and used to skip school to be there. I've been building things since, mostly with code, because it's the fastest way I know to get something into the hands of a person who needs it.</p>
     <h2>What I've built</h2>
     <ul>
-      <li><b>Lux Nova</b> — a foundation I started for my mom, so no family loses a child because a hospital didn't have the right equipment. We've put <b>$30,000+</b> of equipment into under-resourced hospitals and helped <b>200+ families</b> through high-risk pregnancies. At one event a woman hugged me in tears — she'd lost her first baby because the hospital lacked equipment, and told me how scared she'd been this time. I don't forget that.</li>
-      <li><b>BerriBasket</b> — a marketplace that pays farmers directly and cuts food waste. It won the <b>U.S. Congressional App Challenge</b>.</li>
-      <li><b>Liporice</b> — liposomal iron-fortified rice to fight anemia in Southeast Asia, where roughly half of women are anemic.</li>
+      <li><b>Lux Nova</b> is a foundation I started for my mom. It buys equipment for under-resourced hospitals so families don't lose a baby to a missing machine. So far that's <b>$30,000+</b> of equipment and <b>200+ families</b> helped through high-risk pregnancies. At one event a woman hugged me and cried. She had lost her first baby because the hospital didn't have the equipment, and she told me how scared she'd been the second time.</li>
+      <li><b>BerriBasket</b> is a marketplace that pays farmers directly and cuts food waste. It won the <b>U.S. Congressional App Challenge</b>.</li>
+      <li><b>Liporice</b> is rice fortified with liposomal iron, aimed at anemia in South Asia, where about half of women are anemic.</li>
     </ul>
     <h2>How I work</h2>
-    <p>Same pattern every time: use code to get a rough version working fast, prove it helps one person, then figure out how to make it bigger. I've shipped <b>40+ ML projects</b> in Python and built and improved real ML systems on messy historical data as an AI intern at WednesdAI Collective. I'd rather ship something imperfect and learn than wait for a plan I'm sure of.</p>
-    <h2>A few signs it's worked</h2>
-    <p>Congressional App Challenge win (and a note from Rep. Ro Khanna), a <b>1517 Medici</b> grant ($10K AWS + $1K), two-time <b>Conrad Challenge Innovator</b> at Space Center Houston, Top 30 in the Blue Ocean Challenge, and full rides to two selective programs I finished with honors.</p>
+    <p>I get a rough version working fast and check that it helps one person before I try to make it bigger. I've shipped <b>40+ ML projects</b> in Python. As an AI intern at WednesdAI Collective I worked on production ML systems trained on messy historical data.</p>
+    <h2>Recognition</h2>
+    <p>The Congressional App Challenge win came with a note from Rep. Ro Khanna. I also got a <b>1517 Medici</b> grant ($10K in AWS credits plus $1K), was a <b>Conrad Challenge Innovator</b> twice at Space Center Houston, placed Top 30 in the Blue Ocean Challenge, and finished two selective programs on full rides, both with honors.</p>
     <h2>What's next</h2>
-    <p>I want to get better at the part I'm worst at: taking something that works for one person and turning it into something that lasts. Harder problems, sharper people, less of me trying to do it all alone.</p>
-    <div class="foot">Reach me: <a href="https://www.linkedin.com/in/liviapathakamudi/" target="_blank" rel="noopener">linkedin.com/in/liviapathakamudi</a></div>
+    <p>The part I'm worst at is taking something that works for one person and keeping it alive for a thousand. I want to work on that next, with people who are better at it than I am.</p>
+    <div class="foot">Message me on LinkedIn: <a href="https://www.linkedin.com/in/liviapathakamudi/" target="_blank" rel="noopener">linkedin.com/in/liviapathakamudi</a></div>
   </div></div>
 
   <script>
@@ -194,15 +206,17 @@
   const lowEnd = isMobile || (navigator.hardwareConcurrency||8) <= 4;
   const CY=0x4ff8d2, RED=0xff5a3a, GREEN=0x46f08a;
   const SYS=[
-    {name:'origin core', eid:'01', body:"I'm a surviving twin. My mom says I got two brains — one mine, one my sister's — and for years that was mostly guilt. At some point I turned it into purpose. I started building young (my dad's startup office was my playground), and I've used code ever since for one reason: it's the fastest lever I've found to actually help a real person.", tags:['surviving twin','builder since day one']},
-    {name:'ventures bay', eid:'02', body:"Three of the ventures I've put real time into. BerriBasket, a farmer marketplace that won the U.S. Congressional App Challenge. Lux Nova, a foundation that's put $30,000+ of equipment into under-resourced hospitals for 200+ families. Liporice, iron-fortified rice for anemia in South Asia.", tags:['BerriBasket','Lux Nova','Liporice']},
-    {name:'experience relay', eid:'03', body:"The pattern's always the same: use code to get a rough version working fast, prove it helps one person, then make it bigger. I've shipped 40+ ML projects in Python and built real ML systems on messy data as an AI intern at WednesdAI Collective.", tags:['40+ ML projects','WednesdAI','ship → learn → scale']},
-    {name:'recognition reactor', eid:'04', body:"A few signs it's worked: the Congressional App Challenge win and a note from Rep. Ro Khanna, a 1517 Medici grant ($10K AWS + $1K), two-time Conrad Challenge Innovator at Space Center Houston, Top 30 in the Blue Ocean Challenge, and full rides to two selective programs I finished with honors.", tags:['1517 Medici','Conrad Innovator ×2','Blue Ocean Top 30']},
-    {name:'contact array', eid:'05', body:"I'm happiest building things that help real people, and I'm after harder problems and sharper people. (And yes — I'd rather make a 3D world you fly a drone through than a page you scroll.) If any of it resonates, let's talk.", tags:['open to build','get in touch']},
+    {name:'origin core', eid:'01', body:"I'm a surviving twin. My mom says I got two brains, one mine and one my sister's. I grew up in my dad's startup office and used to skip school to be there. I've been building things ever since, mostly with code.", tags:['surviving twin',"dad's startup office"]},
+    {name:'ventures bay', eid:'02', body:"BerriBasket pays farmers directly and won the U.S. Congressional App Challenge. Lux Nova, the foundation I started for my mom, has put $30,000+ of equipment into under-resourced hospitals and helped 200+ families through high-risk pregnancies. Liporice is iron-fortified rice for anemia in South Asia.", tags:['BerriBasket','Lux Nova','Liporice']},
+    {name:'experience relay', eid:'03', body:"I get a rough version working fast and check that it helps one person before I make it bigger. I've shipped 40+ ML projects in Python, and as an AI intern at WednesdAI Collective I worked on ML systems built on messy historical data.", tags:['40+ ML projects','WednesdAI Collective']},
+    {name:'recognition reactor', eid:'04', body:"Congressional App Challenge winner, with a note from Rep. Ro Khanna. A 1517 Medici grant ($10K in AWS credits plus $1K). Conrad Challenge Innovator twice, at Space Center Houston. Top 30 in the Blue Ocean Challenge. Full rides to two selective programs, both finished with honors.", tags:['1517 Medici','Conrad Innovator ×2','Blue Ocean Top 30']},
+    {name:'contact array', eid:'05', body:"I'm looking for harder problems and people who know more than I do. Yes, I built a space station instead of a normal page. The LinkedIn button is bottom right.", tags:['open to work','LinkedIn']},
   ];
 
   const canvas=document.getElementById('c');
-  const renderer=new THREE.WebGLRenderer({canvas,antialias:!lowEnd,powerPreference:'high-performance',preserveDrawingBuffer:true});
+  let renderer;
+  try{ renderer=new THREE.WebGLRenderer({canvas,antialias:!lowEnd,powerPreference:'high-performance',preserveDrawingBuffer:true}); }
+  catch(e){ document.getElementById('read').classList.add('show'); document.getElementById('load').style.opacity='0'; throw e; }
   const DPR=Math.min(devicePixelRatio||1, lowEnd?1.5:2);
   renderer.setPixelRatio(DPR); renderer.setSize(innerWidth||1,innerHeight||1);
   renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.06; renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -231,7 +245,7 @@
     station.traverse(o=>{ if(o.isMesh&&o.material){o.material.envMapIntensity=1.2; if(o.material.roughness>0.95)o.material.roughness=0.7;} });
     scene.add(station);
     SYS.forEach((sy,i)=>{ const t=i/(SYS.length-1); sy.pos=new THREE.Vector3(halfX*0.82 - t*halfX*1.64, (i%2?1:-1)*5, 9); buildFault(sy); });
-    camera.position.set(halfX*0.92,3,22); yaw=Math.PI; pitch=-0.05; modelReady=true; rdy();
+    camera.position.set(halfX*0.92,3,22); yaw=0.3; pitch=-0.05; modelReady=true; rdy();
   },(xhr)=>{ const l=document.getElementById('ldp'); if(l&&xhr.total) l.textContent='docking with station · '+Math.round(xhr.loaded/xhr.total*100)+'%'; },()=>{modelReady=true;rdy();});
   function rdy(){ if(envReady&&modelReady){ const l=document.getElementById('load'); if(l)l.style.opacity='0'; } }
 
@@ -258,7 +272,7 @@
     counterEl.classList.remove('pop'); void counterEl.offsetWidth; counterEl.classList.add('pop');
     setCharge(false); sfxPower();
     showCard(sy); const n=SYS.filter(x=>x.repaired).length; cnum.textContent=n;
-    if(n===SYS.length){ sfxWin(); setTimeout(()=>document.getElementById('win').classList.add('show'),1100); }
+    if(n===SYS.length){ sfxWin(); setTimeout(()=>{ if(document.exitPointerLock)document.exitPointerLock(); document.getElementById('win').classList.add('show'); },1100); }
   }
 
   // (postprocessing removed — fully local, zero CDN; emissive faults still glow via tone mapping)
@@ -282,9 +296,9 @@
   let heroGone=false; function hideHero(){if(!heroGone){heroGone=true;hero.classList.add('gone');cross.classList.add('on');}}
   addEventListener('keydown',e=>{keys[e.code]=true; if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();});
   addEventListener('keyup',e=>{keys[e.code]=false;});
-  function launch(){hideHero(); initAudio(); if(!isMobile&&document.pointerLockElement!==canvas)canvas.requestPointerLock();
-    toast.textContent='five systems are dark — follow the red beacons, aim, and hold E to power each up'; toast.classList.add('on'); setTimeout(()=>toast.classList.remove('on'),6500); }
-  canvas.addEventListener('click',launch); document.getElementById('start').addEventListener('click',launch);
+  function launch(){hideHero(); initAudio(); if(!isMobile&&document.pointerLockElement!==canvas){ const pl=canvas.requestPointerLock(); if(pl&&pl.catch)pl.catch(()=>{}); }
+    toast.textContent=isMobile?'five systems are dark. Hold a finger down to fly, steer toward the red beacons, then hold the button to power each one up':'five systems are dark. Follow the red beacons, aim at one, and hold E to power it up'; toast.classList.add('on'); setTimeout(()=>toast.classList.remove('on'),6500); }
+  canvas.addEventListener('click',launch); const startEl=document.getElementById('start'); startEl.addEventListener('click',launch); startEl.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); launch(); } });
   let dragging=false, lx=0, ly=0;
   canvas.addEventListener('mousedown',e=>{ if(document.pointerLockElement!==canvas){ dragging=true; lx=e.clientX; ly=e.clientY; canvas.style.cursor='grabbing'; } });
   addEventListener('mouseup',()=>{ dragging=false; canvas.style.cursor=''; });
@@ -294,6 +308,8 @@
     pitch=Math.max(-1.45,Math.min(1.45,pitch));
   });
   let tl=null, mobileRepair=false;
+  if(isMobile){ const h=document.getElementById('starthint'); if(h)h.textContent='hold a finger down to fly · hold the button to bring a system online'; }
+  document.getElementById('keepFlying').addEventListener('click',()=>document.getElementById('win').classList.remove('show'));
   if(isMobile){ canvas.addEventListener('touchstart',e=>{tl=e.touches[0];hideHero();},{passive:true});
     canvas.addEventListener('touchmove',e=>{const t=e.touches[0];if(tl){yaw-=(t.clientX-tl.clientX)*0.005;pitch-=(t.clientY-tl.clientY)*0.005;pitch=Math.max(-1.45,Math.min(1.45,pitch));}tl=t;},{passive:true});
     canvas.addEventListener('touchend',()=>tl=null,{passive:true});
@@ -304,7 +320,7 @@
   const prompt=document.getElementById('prompt'), pt=prompt.querySelector('.pt'), pbar=document.querySelector('#pbar i');
   const card=document.getElementById('card'),cE=card.querySelector('.eid'),cH=card.querySelector('h2'),cP=card.querySelector('p'),cT=card.querySelector('.tags');
   let cardT=0;
-  function showCard(sy){ cE.textContent='system '+sy.eid+' · online — '+sy.name; cH.textContent=sy.name.split(' ')[0]; cP.textContent=sy.body; cT.innerHTML=sy.tags.map(t=>'<span class="tag">'+t+'</span>').join(''); card.classList.add('show'); cardT=9; }
+  function showCard(sy){ cE.textContent='system '+sy.eid+' online · '+sy.name; cH.textContent=sy.name.split(' ')[0]; cP.textContent=sy.body; cT.innerHTML=sy.tags.map(t=>'<span class="tag">'+t+'</span>').join(''); card.classList.add('show'); cardT=9; }
 
   // render
   const clock=new THREE.Clock(); const fwd=new THREE.Vector3(),right=new THREE.Vector3(),up=new THREE.Vector3(0,1,0); const REPAIR_T=1.9;
@@ -314,7 +330,7 @@
     if(keys.KeyW||keys.ArrowUp)acc.add(fwd); if(keys.KeyS||keys.ArrowDown)acc.sub(fwd);
     if(keys.KeyD||keys.ArrowRight)acc.add(right); if(keys.KeyA||keys.ArrowLeft)acc.sub(right);
     if(keys.Space)acc.y+=1; if(keys.ShiftLeft||keys.ShiftRight)acc.y-=1;
-    if(isMobile&&heroGone)acc.add(fwd).multiplyScalar(0.75);
+    if(isMobile&&heroGone&&tl)acc.add(fwd).multiplyScalar(0.75);
     vel.lerp(acc.lengthSq()>0?acc.normalize().multiplyScalar(22):new THREE.Vector3(),0.08);
     camera.position.addScaledVector(vel,dt); flash.position.copy(camera.position);
 
@@ -334,6 +350,7 @@
 
     // interaction: be in range AND aimed, then hold E to charge
     let charging=false;
+    if(!heroGone)target=null;
     if(target){
       _toS.copy(target.pos).sub(camera.position).normalize();
       const aimed=fwd.dot(_toS)>0.93, inRange=nd<17, holding=keys.KeyE||mobileRepair;
@@ -341,7 +358,7 @@
       if(inRange){ prompt.classList.add('show');
         if(holding&&aimed){ charging=true; target.progress+=dt/REPAIR_T; if(target.progress>=1){target.progress=1;repair(target);} }
         else target.progress=Math.max(0,target.progress-dt*0.7);
-        pt.innerHTML = charging?('powering up <b>'+target.name+'</b>…'):(aimed?('aim locked — hold <b>E</b> · <b>'+target.name+'</b>'):('look at the <b>'+target.name+'</b> panel'));
+        pt.innerHTML = charging?('powering up <b>'+target.name+'</b>…'):(aimed?('locked on · hold <b>'+(isMobile?'the button':'E')+'</b> to power up the <b>'+target.name+'</b>'):('look at the <b>'+target.name+'</b> panel'));
         pbar.style.width=(target.progress*100)+'%';
         chargeRing.classList.toggle('on',target.progress>0); chargeRing.style.setProperty('--p',(target.progress*100).toFixed(0));
       } else { prompt.classList.remove('show'); chargeRing.classList.remove('on'); }
@@ -363,7 +380,7 @@
   }
   function animate(){requestAnimationFrame(animate);const dt=Math.min(0.05,clock.getDelta());frame(dt,clock.elapsedTime);}
   setTimeout(()=>{const l=document.getElementById('load');if(l)l.style.opacity='0';},22000);
-  window.__cap=(i)=>{ const sy=SYS[i]; if(sy&&sy.pos){camera.position.set(sy.pos.x+8,sy.pos.y+3,sy.pos.z+12);yaw=Math.PI+0.2;pitch=-0.1;} frame(0.001,1); };
+  window.__cap=(i)=>{ const sy=SYS[i]; if(sy&&sy.pos){camera.position.set(sy.pos.x+8,sy.pos.y+3,sy.pos.z+12);yaw=0.589;pitch=-0.205;} frame(0.001,1); };
   function fit(){const w=innerWidth||1,h=innerHeight||1;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(composer)composer.setSize(w,h);}
   addEventListener('resize',fit); try{new ResizeObserver(fit).observe(document.documentElement);}catch(e){}
   animate();
