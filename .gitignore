@@ -2,7 +2,6 @@
 .claude/
 
 # Unused heavy assets — not referenced by index.html (keep the deploy lean)
-assets/iss.glb
 assets/probe.glb
 assets/space_night_2k.hdr
 assets/floor_arm.jpg
