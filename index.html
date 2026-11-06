@@ -10,7 +10,12 @@
 <meta property="og:description" content="Fly a drone around a space station and bring five systems online to read about Livia's work." />
 <meta property="og:url" content="https://livia.ltd" />
 <meta property="og:type" content="website" />
-<meta name="twitter:card" content="summary" />
+<meta property="og:image" content="https://livia.ltd/assets/og.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="The International Space Station above Earth, with five red beacon pillars rising from it" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://livia.ltd/assets/og.jpg" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2303050c'/%3E%3Ctext x='16' y='23' font-family='Arial Black,sans-serif' font-size='20' font-weight='900' text-anchor='middle' fill='%234ff8d2'%3EL%3C/text%3E%3C/svg%3E" />
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
@@ -666,6 +671,7 @@
     pollPad(); if(pad.start&&!pad._start){ if(!heroGone) launch(); else if(!document.getElementById('win').classList.contains('show')) (paused?resumeGame():openPause()); }
     if(pad.a&&!pad._a&&!heroGone) launch(); pad._start=pad.start; pad._a=pad.a; if(paused){ renderer.render(scene,camera); return; } if(hitStop>0){hitStop-=dt; dt*=0.12;} frame(dt,clock.elapsedTime);}
   setTimeout(()=>{const l=document.getElementById('load');if(l)l.style.opacity='0';},22000);
+  window.__view=(x,y,z,yw,pt)=>{ camera.position.set(x,y,z); yaw=yw; pitch=pt; vel.set(0,0,0); };
   window.__cap=(i)=>{ const sy=SYS[i]; if(sy&&sy.pos){camera.position.set(sy.pos.x+8,sy.pos.y+3,sy.pos.z+12);yaw=0.589;pitch=-0.205;} frame(0.001,1); };
   function fit(){const w=innerWidth||1,h=innerHeight||1;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(composer)composer.setSize(w,h);}
   addEventListener('resize',fit); try{new ResizeObserver(fit).observe(document.documentElement);}catch(e){}
