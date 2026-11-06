@@ -498,7 +498,7 @@
   // controls
   let yaw=Math.PI,pitch=0; const vel=new THREE.Vector3(); const keys={};
   const cross=document.getElementById('cross'), hero=document.getElementById('hero');
-  let heroGone=false; function hideHero(){if(!heroGone){heroGone=true;hero.classList.add('gone');cross.classList.add('on');}}
+  let heroGone=false; function hideHero(){if(!heroGone){heroGone=true;hero.classList.add('gone');cross.classList.add('on'); setTimeout(()=>{hero.style.display='none';},1100);}}
   addEventListener('keydown',e=>{ if(e.code==='KeyH'&&heroGone){ SET.hud=!SET.hud; applySettings(); }
     if(e.code==='KeyL'&&heroGone&&!paused){ if(document.exitPointerLock)document.exitPointerLock(); openPause(); return; }
     if(e.code==='Escape'&&heroGone&&!document.getElementById('read').classList.contains('show')&&!document.getElementById('win').classList.contains('show')){ paused?resumeGame():openPause(); return; }
