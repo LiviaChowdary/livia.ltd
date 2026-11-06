@@ -71,7 +71,7 @@
   #card h2,#card p{text-shadow:none}
   #banner{transition:opacity 1.5s,transform .5s cubic-bezier(.2,1.4,.4,1)}
   #banner.on{transition:opacity .18s,transform .5s cubic-bezier(.2,1.4,.4,1)}
-  #banner b{white-space:nowrap;font-size:clamp(20px,6.4vw,64px)}
+  #banner b{white-space:nowrap;font-size:clamp(18px,4.4vw,56px)}
   #banner.start b{color:var(--amber);text-shadow:0 2px 0 #000}
   #banner b{text-shadow:0 2px 0 #000,0 0 18px rgba(70,240,138,.3)}
   #stick{position:fixed;z-index:6;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:1px solid rgba(79,248,210,.35);background:rgba(3,6,14,.25);pointer-events:none;opacity:0;transition:opacity .15s}
@@ -80,6 +80,12 @@
   #tbtns{position:fixed;right:16px;bottom:72px;z-index:6;display:none;flex-direction:column;gap:10px}
   #tbtns button{width:58px;height:46px;border-radius:6px;border:1px solid rgba(79,248,210,.35);background:rgba(3,6,14,.55);color:var(--ink);font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;touch-action:none}
   @media (pointer:coarse){ body.live #tbtns{display:flex} }
+  #flares{position:fixed;inset:0;z-index:1;pointer-events:none;mix-blend-mode:screen}
+  #flares i{position:absolute;left:0;top:0;border-radius:50%;opacity:0;transform:translate(-50%,-50%)}
+  #flares i:nth-child(1){width:90px;height:90px;background:radial-gradient(circle,rgba(255,220,160,.35),rgba(255,220,160,0) 70%)}
+  #flares i:nth-child(2){width:46px;height:46px;background:radial-gradient(circle,rgba(120,200,255,.0) 40%,rgba(120,200,255,.35) 60%,rgba(120,200,255,0) 72%)}
+  #flares i:nth-child(3){width:140px;height:140px;background:radial-gradient(circle,rgba(150,255,220,.16),rgba(150,255,220,0) 65%)}
+  #flares i:nth-child(4){width:24px;height:24px;background:radial-gradient(circle,rgba(255,180,120,.5),rgba(255,180,120,0) 70%)}
   body.hudoff #radar,body.hudoff #obj,body.hudoff #help,body.hudoff #counter,body.hudoff #ttag{display:none!important}
   #pause{position:fixed;inset:0;z-index:15;display:none;align-items:center;background:linear-gradient(90deg,rgba(2,4,10,.92) 0%,rgba(2,4,10,.75) 40%,rgba(2,4,10,.25) 100%)}
   #pause.show{display:flex}
@@ -221,6 +227,7 @@
     <div class="plog" id="plog"></div>
     <div class="hint">Esc or L opens this menu · H hides the HUD · gamepad works too</div>
   </div></div>
+  <div id="flares"><i></i><i></i><i></i><i></i></div>
   <div id="stick"><i></i></div>
   <div id="tbtns"><button id="tUp" type="button">▲</button><button id="tDown" type="button">▼</button><button id="tBoost" type="button">boost</button></div>
   <div id="obj"></div><div id="help"></div><div id="banner"><b>SYSTEM ONLINE</b><small></small></div>
@@ -365,6 +372,12 @@
     vertexShader:`varying vec3 vN; void main(){ vN=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
     fragmentShader:`varying vec3 vN; void main(){ float i=pow(clamp(.72-dot(vN,vec3(0.,0.,1.)),0.,1.),3.); gl_FragColor=vec4(vec3(.3,.6,1.)*i*1.6,i); }`}));
   atmo.position.copy(earth.position); scene.add(atmo);
+  // sun along the key light: a soft glow sprite, plus screen-space flare ghosts that slide as you look toward it
+  const glowTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=256; const g=c.getContext('2d'), gr=g.createRadialGradient(128,128,0,128,128,128);
+    gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.08,'rgba(255,248,225,.95)'); gr.addColorStop(.25,'rgba(255,214,150,.35)'); gr.addColorStop(1,'rgba(255,190,120,0)'); g.fillStyle=gr; g.fillRect(0,0,256,256); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; })();
+  const sun=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
+  sun.position.copy(SUN).multiplyScalar(3300); sun.scale.setScalar(980); sun.material.fog=false; scene.add(sun);
+  const flareEls=[...document.querySelectorAll('#flares i')];
 
   // the real ISS
   let station=null, halfX=60;
@@ -574,6 +587,9 @@
     if(introT>0){ introT=Math.max(0,introT-dt); const k=1-introT/2.2, e=1-Math.pow(1-k,3); camera.position.lerpVectors(introFrom,spawnPos,e); vel.set(0,0,0); }
     flash.position.copy(camera.position);
     earthU.uT.value=t;
+    // flare ghosts sit on the line from the sun through screen centre, fading as the sun leaves view
+    { sun.position.copy(SUN).multiplyScalar(3300).add(camera.position); _ndc.copy(sun.position).project(camera); const on=_ndc.z<1&&Math.abs(_ndc.x)<1.2&&Math.abs(_ndc.y)<1.2; const k=on?Math.max(0,1-Math.hypot(_ndc.x,_ndc.y)/1.3):0;
+      [0.55,-0.2,-0.6,-1.1].forEach((f,i)=>{ const el=flareEls[i]; if(!el)return; el.style.opacity=(k*0.9).toFixed(3); el.style.left=((_ndc.x*f+1)/2*innerWidth)+'px'; el.style.top=((1-_ndc.y*f)/2*innerHeight)+'px'; }); }
     for(const nl of navLights) nl.visible=((t+nl.userData.ph)%1.6)<0.14;
     if(flashT>0){ flashT-=dt; if(flashT<=0&&flashSy){ flashSy.core.material.emissive.setHex(GREEN); flashSy.core.material.emissiveIntensity=1.6; } }
     if(hum){ const sp=vel.length()/22; hum.frequency.setTargetAtTime(48+sp*38,actx.currentTime,0.15); humGain.gain.setTargetAtTime(sp*0.035,actx.currentTime,0.2); }
