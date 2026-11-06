@@ -435,6 +435,7 @@
     hitflash.classList.remove('on'); void hitflash.offsetWidth; hitflash.classList.add('on');
     counterEl.classList.remove('pop'); void counterEl.offsetWidth; counterEl.classList.add('pop');
     setCharge(false); sfxPower(SYS.filter(x=>x.repaired).length-1);
+    addLayer(SYS.filter(x=>x.repaired).length-1);
     hitStop=0.09; shake=1; if(navigator.vibrate)navigator.vibrate([25,40,70]);
     const pi=document.querySelectorAll('#pips i')[SYS.filter(x=>x.repaired).length-1]; if(pi)pi.classList.add('on');
     showCard(sy); const n=SYS.filter(x=>x.repaired).length; cnum.textContent=n;
@@ -467,6 +468,10 @@
     hum=actx.createOscillator(); humGain=actx.createGain(); const lp=actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=240;
     hum.type='sawtooth'; hum.frequency.value=48; humGain.gain.value=0; hum.connect(lp).connect(humGain).connect(master); hum.start(); if(!SET.snd||paused) actx.suspend(); }catch(e){} }
   function tone(f,dur,type,vol,to,pan){ if(!actx)return; const o=actx.createOscillator(),g=actx.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,actx.currentTime); if(to)o.frequency.exponentialRampToValueAtTime(to,actx.currentTime+dur); g.gain.setValueAtTime(vol||0.12,actx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur); if(pan!=null&&actx.createStereoPanner){ const sp=actx.createStereoPanner(); sp.pan.value=pan; o.connect(g).connect(sp).connect(master); } else o.connect(g).connect(master); o.start(); o.stop(actx.currentTime+dur+0.02); }
+  // music builds with progress: each system online adds one sustained note, so five systems ring a full chord
+  function addLayer(k){ if(!actx||!master)return; const f=[98,147,196,247,294][k]; if(!f)return; const now=actx.currentTime;
+    for(const d of [0,0.6]){ const o=actx.createOscillator(), g=actx.createGain(), lp=actx.createBiquadFilter(); o.type='triangle'; o.frequency.value=f; o.detune.value=d?7:-7;
+      lp.type='lowpass'; lp.frequency.value=900; g.gain.setValueAtTime(0.0001,now); g.gain.exponentialRampToValueAtTime(0.011,now+2.5); o.connect(lp).connect(g).connect(master); o.start(now); } }
   // each system plays the next note up a pentatonic scale, so progress is audible
   function sfxPower(k){ const b=[392,440,523,587,659][k]||523; tone(b,0.12,'triangle',0.16); setTimeout(()=>tone(b*1.5,0.16,'triangle',0.15),90); setTimeout(()=>tone(b*2,0.5,'sine',0.13),200); }
   function sfxWin(){ [523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone(f,0.6,'triangle',0.13),i*130)); }
