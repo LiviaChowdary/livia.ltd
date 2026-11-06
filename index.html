@@ -71,8 +71,15 @@
   #card h2,#card p{text-shadow:none}
   #banner{transition:opacity 1.5s,transform .5s cubic-bezier(.2,1.4,.4,1)}
   #banner.on{transition:opacity .18s,transform .5s cubic-bezier(.2,1.4,.4,1)}
+  #banner b{white-space:nowrap;font-size:clamp(20px,6.4vw,64px)}
   #banner.start b{color:var(--amber);text-shadow:0 2px 0 #000}
   #banner b{text-shadow:0 2px 0 #000,0 0 18px rgba(70,240,138,.3)}
+  #stick{position:fixed;z-index:6;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:1px solid rgba(79,248,210,.35);background:rgba(3,6,14,.25);pointer-events:none;opacity:0;transition:opacity .15s}
+  #stick.on{opacity:1}
+  #stick i{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(79,248,210,.35);border:1px solid var(--cyan)}
+  #tbtns{position:fixed;right:16px;bottom:72px;z-index:6;display:none;flex-direction:column;gap:10px}
+  #tbtns button{width:58px;height:46px;border-radius:6px;border:1px solid rgba(79,248,210,.35);background:rgba(3,6,14,.55);color:var(--ink);font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;touch-action:none}
+  @media (pointer:coarse){ body.live #tbtns{display:flex} }
   body.hudoff #radar,body.hudoff #obj,body.hudoff #help,body.hudoff #counter,body.hudoff #ttag{display:none!important}
   #pause{position:fixed;inset:0;z-index:15;display:none;align-items:center;background:linear-gradient(90deg,rgba(2,4,10,.92) 0%,rgba(2,4,10,.75) 40%,rgba(2,4,10,.25) 100%)}
   #pause.show{display:flex}
@@ -143,6 +150,7 @@
   #win p{font-size:13px;line-height:1.8;color:#c2cbe0;max-width:520px;margin:0 auto 24px}
   #win a{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);text-decoration:none;padding:12px 24px;border:1px solid var(--cyan);border-radius:4px;display:inline-block;transition:.2s}
   #win a:hover{background:rgba(79,248,210,.1);color:var(--cyan)}
+  #win .wsplits{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:-8px auto 20px;max-width:560px;line-height:1.9}
   #win .wtime{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--amber);margin:-8px 0 18px}
   .hc.wait{opacity:.6!important;cursor:progress;border-style:dashed}
   .hc.ready{animation:hf 1s ease forwards, hcpulse 1.8s ease-in-out 1s infinite}
@@ -205,6 +213,8 @@
     </div>
     <div class="hint">Esc opens this menu · H hides the HUD</div>
   </div></div>
+  <div id="stick"><i></i></div>
+  <div id="tbtns"><button id="tUp" type="button">▲</button><button id="tDown" type="button">▼</button><button id="tBoost" type="button">boost</button></div>
   <div id="obj"></div><div id="help"></div><div id="banner"><b>SYSTEM ONLINE</b><small></small></div>
   <div id="controls" class="hud"><b>W A S D</b> fly · <b>mouse</b> look · <b>Q</b> boost · fly to a <b style="color:var(--red)">dark panel</b> · hold <b>E</b> to power it up</div>
   <a id="linkedin" href="https://www.linkedin.com/in/liviapathakamudi/" target="_blank" rel="noopener">▸ LinkedIn</a>
@@ -226,6 +236,7 @@
       <h1>STATION ONLINE</h1>
       <div class="wsub">all five systems running · thanks for the help</div>
       <div class="wtime" id="wtime"></div>
+      <div class="wsplits" id="wsplits"></div>
       <p>That's me, Livia. Four ventures, 40+ ML projects, and a habit of starting before I'm ready. You flew a drone across a space station to read my résumé, which is more effort than most recruiters put in. Come say hi.</p>
       <a href="https://www.linkedin.com/in/liviapathakamudi/" target="_blank" rel="noopener">message me on LinkedIn ▸</a>
       <button class="keep" id="keepFlying">or keep flying</button>
@@ -377,7 +388,7 @@
     sy.beam.material.fog=false; sy.beam.position.set(sy.pos.x,sy.pos.y+20,sy.pos.z); scene.add(sy.beam);
     sy.repaired=false; sy.progress=0;
   }
-  function repair(sy){ sy.repaired=true;
+  function repair(sy){ sy.repaired=true; sy.split=Math.round((performance.now()-runStart)/1000);
     // flash pure white for a moment before settling green (Nijman, Art of Screenshake)
     sy.core.material.emissive.setHex(0xffffff); sy.core.material.emissiveIntensity=6; flashT=0.08; flashSy=sy;
     sy.ring.material.color.setHex(GREEN); sy.light.color.setHex(GREEN); sy.light.intensity=1.4;
@@ -395,7 +406,8 @@
     counterEl.classList.add('hot'); setTimeout(()=>counterEl.classList.remove('hot'),1200);
     if(n===SYS.length){ hitStop=0.7; shake=1.5; if(!reduceMotion)camera.fov+=12; sfxWin();
       try{localStorage.setItem('liviaPlayed','1')}catch(e){} const secs=Math.round((performance.now()-runStart)/1000); let best=secs; try{ best=Math.min(secs,+(localStorage.getItem('liviaBest')||1e9)); localStorage.setItem('liviaBest',best); }catch(e){}
-      const fmt=x=>Math.floor(x/60)+':'+String(x%60).padStart(2,'0'); document.getElementById('wtime').textContent='your time '+fmt(secs)+(best<secs?' · best '+fmt(best):' · personal best');
+      const fmt=x=>Math.floor(x/60)+':'+String(x%60).padStart(2,'0'); document.getElementById('wsplits').textContent=SYS.slice().sort((a,b)=>a.split-b.split).map(x=>x.name.split(' ')[0]+' '+fmt(x.split)).join('  ·  ');
+      document.getElementById('wtime').textContent='your time '+fmt(secs)+(best<secs?' · best '+fmt(best):' · personal best');
       setTimeout(()=>{ if(document.exitPointerLock)document.exitPointerLock(); card.classList.remove('show'); cardT=0; document.getElementById('win').classList.add('show'); },1100); }
   }
 
@@ -435,7 +447,7 @@
   const hitflash=document.getElementById('hitflash'), objArrow=document.getElementById('objArrow'), chargeRing=document.getElementById('chargeRing'), toast=document.getElementById('toast'), bound=document.getElementById('bound'), counterEl=document.getElementById('counter'), ttag=document.getElementById('ttag'), objEl=document.getElementById('obj'), helpEl=document.getElementById('help'), bannerEl=document.getElementById('banner'), radar=document.getElementById('radar'), rctx=radar.getContext('2d');
   // help box teaches one control at a time and moves on once you've used it
   const HELP=isMobile?[
-    {t:'Hold a finger on the screen to fly. Drag to steer.', done:()=>movedDist>20},
+    {t:'Left thumb moves. Right thumb looks around. ▲ ▼ go up and down.', done:()=>movedDist>20},
     {t:'The <b style="color:var(--red)">red blips</b> on your radar are dark systems. Fly to one.', done:()=>helpT>6},
     {t:'Close in and aim, then hold <kbd>POWER UP</kbd>.', done:()=>SYS.some(x=>x.repaired)}]:[
     {t:'Use <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to fly and the mouse to look. <kbd>Space</kbd> and <kbd>Shift</kbd> go up and down.', done:()=>movedDist>20},
@@ -488,12 +500,21 @@
     pitch=Math.max(-1.45,Math.min(1.45,pitch));
   });
   let tl=null, mobileRepair=false;
-  if(isMobile){ const h=document.getElementById('starthint'); if(h)h.textContent='hold a finger down to fly · hold POWER UP to bring a system online'; }
+  if(isMobile){ const h=document.getElementById('starthint'); if(h)h.textContent='left thumb moves · right thumb looks · hold POWER UP near a system'; }
   document.getElementById('replay').addEventListener('click',()=>location.reload());
   document.getElementById('keepFlying').addEventListener('click',()=>document.getElementById('win').classList.remove('show'));
-  if(isMobile){ canvas.addEventListener('touchstart',e=>{tl=e.touches[0];hideHero();},{passive:true});
-    canvas.addEventListener('touchmove',e=>{const t=e.touches[0];if(tl){yaw-=(t.clientX-tl.clientX)*0.005*SET.sens;pitch-=(t.clientY-tl.clientY)*0.005*SET.sens*(SET.inv?-1:1);pitch=Math.max(-1.45,Math.min(1.45,pitch));}tl=t;},{passive:true});
-    canvas.addEventListener('touchend',()=>tl=null,{passive:true});
+  // twin-stick touch: left thumb is a floating move stick, right thumb drags to look (mobile FPS convention)
+  let stickId=null, lookId=null, sx0=0, sy0=0; const stickV={x:0,y:0}; const stickEl=document.getElementById('stick'), knobEl=stickEl.querySelector('i');
+  if(isMobile){ canvas.addEventListener('touchstart',e=>{ hideHero(); for(const t of e.changedTouches){
+      if(t.clientX<innerWidth/2&&stickId===null){ stickId=t.identifier; sx0=t.clientX; sy0=t.clientY; stickEl.style.left=sx0+'px'; stickEl.style.top=sy0+'px'; stickEl.classList.add('on'); }
+      else if(lookId===null){ lookId=t.identifier; tl={clientX:t.clientX,clientY:t.clientY}; } } },{passive:true});
+    canvas.addEventListener('touchmove',e=>{ for(const t of e.changedTouches){
+      if(t.identifier===stickId){ let dx=(t.clientX-sx0)/55, dy=(t.clientY-sy0)/55; const m=Math.hypot(dx,dy); if(m>1){dx/=m;dy/=m;} stickV.x=dx; stickV.y=dy; knobEl.style.transform='translate('+(dx*40)+'px,'+(dy*40)+'px)'; }
+      else if(t.identifier===lookId&&tl){ yaw-=(t.clientX-tl.clientX)*0.005*SET.sens; pitch-=(t.clientY-tl.clientY)*0.005*SET.sens*(SET.inv?-1:1); pitch=Math.max(-1.45,Math.min(1.45,pitch)); tl={clientX:t.clientX,clientY:t.clientY}; } } },{passive:true});
+    const endT=e=>{ for(const t of e.changedTouches){ if(t.identifier===stickId){ stickId=null; stickV.x=stickV.y=0; knobEl.style.transform=''; stickEl.classList.remove('on'); } if(t.identifier===lookId){ lookId=null; tl=null; } } };
+    canvas.addEventListener('touchend',endT,{passive:true}); canvas.addEventListener('touchcancel',endT,{passive:true});
+    const hold=(id,code)=>{ const el=document.getElementById(id); el.addEventListener('touchstart',e=>{e.preventDefault();keys[code]=true;},{passive:false}); el.addEventListener('touchend',()=>keys[code]=false); };
+    hold('tUp','Space'); hold('tDown','ShiftLeft'); hold('tBoost','KeyQ');
     const rb=document.getElementById('rbtn'); rb.addEventListener('touchstart',e=>{e.preventDefault();mobileRepair=true;},{passive:false}); rb.addEventListener('touchend',()=>mobileRepair=false); }
 
   // HUD
@@ -515,7 +536,7 @@
     if(keys.KeyW||keys.ArrowUp)acc.add(fwd); if(keys.KeyS||keys.ArrowDown)acc.sub(fwd);
     if(keys.KeyD||keys.ArrowRight)acc.add(right); if(keys.KeyA||keys.ArrowLeft)acc.sub(right);
     if(keys.Space)acc.y+=1; if(keys.ShiftLeft||keys.ShiftRight)acc.y-=1;
-    if(isMobile&&heroGone&&tl)acc.add(fwd).multiplyScalar(0.75);
+    if(isMobile&&heroGone){ acc.addScaledVector(fwd,-stickV.y).addScaledVector(right,stickV.x); }
     // afterburner on Q: 1.2s at 1.75x speed, then a cooldown
     boostT=Math.max(0,boostT-dt); boostCD=Math.max(0,boostCD-dt);
     if(keys.KeyQ&&boostCD<=0&&heroGone){ usedBoost=true; boostT=1.2; boostCD=5.2; shake=Math.max(shake,0.45); tone(140,0.5,'sawtooth',0.06,420); }
