@@ -83,6 +83,7 @@
   body.hudoff #radar,body.hudoff #obj,body.hudoff #help,body.hudoff #counter,body.hudoff #ttag{display:none!important}
   #pause{position:fixed;inset:0;z-index:15;display:none;align-items:center;background:linear-gradient(90deg,rgba(2,4,10,.92) 0%,rgba(2,4,10,.75) 40%,rgba(2,4,10,.25) 100%)}
   #pause.show{display:flex}
+  body.won #help,body.won #obj,body.won #ttag,body.won #banner,body.won #card{visibility:hidden}
   body.paused #banner,body.paused #card,body.paused #obj,body.paused #help,body.paused #ttag,body.paused #prompt,body.paused #readToggle,body.paused #pauseBtn,body.paused #toast{visibility:hidden}
   .pz{max-height:calc(100vh - 48px);overflow-y:auto;padding:8px 0}
   .pz{margin-left:max(24px,8vw);width:min(380px,84vw)}
@@ -418,11 +419,12 @@
     bannerEl.classList.remove('start'); bannerEl.querySelector('b').textContent='SYSTEM ONLINE';
     bannerEl.querySelector('small').textContent=sy.name+(n===4?' · one system left':' · '+n+' of 5'); bannerEl.classList.add('on'); bannerT=1.0;
     counterEl.classList.add('hot'); setTimeout(()=>counterEl.classList.remove('hot'),1200);
+    if(n===SYS.length-1){ const last=SYS.find(x=>!x.repaired); if(last){ last.final=true; if(last.beam){ last.beam.scale.set(1.8,2.2,1.8); last.beam.position.y=last.pos.y+44; } tone(220,0.9,'triangle',0.08,330); } }
     if(n===SYS.length){ hitStop=0.7; shake=1.5; if(!reduceMotion)camera.fov+=12; sfxWin();
       try{localStorage.setItem('liviaPlayed','1')}catch(e){} const secs=Math.round((performance.now()-runStart)/1000); let best=secs; try{ best=Math.min(secs,+(localStorage.getItem('liviaBest')||1e9)); localStorage.setItem('liviaBest',best); }catch(e){}
       const fmt=x=>Math.floor(x/60)+':'+String(x%60).padStart(2,'0'); document.getElementById('wsplits').textContent=SYS.slice().sort((a,b)=>a.split-b.split).map(x=>x.name.split(' ')[0]+' '+fmt(x.split)).join('  ·  ');
       document.getElementById('wtime').textContent='your time '+fmt(secs)+(best<secs?' · best '+fmt(best):' · personal best');
-      setTimeout(()=>{ if(document.exitPointerLock)document.exitPointerLock(); card.classList.remove('show'); cardT=0; document.getElementById('win').classList.add('show'); },1100); }
+      setTimeout(()=>{ if(document.exitPointerLock)document.exitPointerLock(); card.classList.remove('show'); cardT=0; document.body.classList.add('won'); document.getElementById('win').classList.add('show'); },1100); }
   }
 
   // (postprocessing removed — fully local, zero CDN; emissive faults still glow via tone mapping)
@@ -518,7 +520,7 @@
   let tl=null, mobileRepair=false;
   if(isMobile){ const h=document.getElementById('starthint'); if(h)h.textContent='left thumb moves · right thumb looks · hold POWER UP near a system'; }
   document.getElementById('replay').addEventListener('click',()=>location.reload());
-  document.getElementById('keepFlying').addEventListener('click',()=>document.getElementById('win').classList.remove('show'));
+  document.getElementById('keepFlying').addEventListener('click',()=>{ document.body.classList.remove('won'); },{once:false}); document.getElementById('keepFlying').addEventListener('click',()=>document.getElementById('win').classList.remove('show'));
   // twin-stick touch: left thumb is a floating move stick, right thumb drags to look (mobile FPS convention)
   let stickId=null, lookId=null, sx0=0, sy0=0; const stickV={x:0,y:0}; const stickEl=document.getElementById('stick'), knobEl=stickEl.querySelector('i');
   if(isMobile){ canvas.addEventListener('touchstart',e=>{ hideHero(); for(const t of e.changedTouches){
@@ -542,6 +544,8 @@
 
   // render
   const clock=new THREE.Clock(); const fwd=new THREE.Vector3(),right=new THREE.Vector3(),up=new THREE.Vector3(0,1,0); const REPAIR_T=1.5;
+  // holds lengthen as you go so the last system feels like the climax
+  const HOLD=[1.2,1.4,1.5,1.7,2.4];
   function frame(dt,t){
     camera.rotation.set(pitch,yaw,0); camera.getWorldDirection(fwd); right.crossVectors(fwd,up).normalize();
     // bank into strafes and add a short, decaying shake on impacts (off for reduced motion)
@@ -580,8 +584,8 @@
     // beacons flicker + find nearest offline system
     let target=null,nd=1e9;
     for(const sy of SYS){ if(!sy.pos)continue; const d=camera.position.distanceTo(sy.pos);
-      if(!sy.repaired){ sy.light.intensity=2.0*(0.7+Math.random()*0.6)+sy.progress*5; sy.core.scale.setScalar(1+Math.sin(t*(6+sy.progress*14))*0.08+sy.progress*0.45); sy.ring.rotation.z+=dt*(1.4+sy.progress*10); sy.ring.lookAt(camera.position);
-        if(sy.beam) sy.beam.material.opacity=0.22+Math.sin(t*4+sy.pos.x)*0.13;
+      if(!sy.repaired){ sy.light.intensity=(sy.final?3.4:2.0)*(0.7+Math.random()*0.6)+sy.progress*5; sy.core.scale.setScalar(1+Math.sin(t*(6+sy.progress*14))*0.08+sy.progress*0.45); sy.ring.rotation.z+=dt*(1.4+sy.progress*10); sy.ring.lookAt(camera.position);
+        if(sy.beam) sy.beam.material.opacity=(sy.final?0.4:0.22)+Math.sin(t*(sy.final?7:4)+sy.pos.x)*0.13;
         if(sy.sparks){ const a=sy.sparks.geometry.attributes.position; for(let i=0;i<a.count;i++){a.array[i*3+1]=sy.pos.y+Math.sin(t*8+i)*1.0;} a.needsUpdate=true; sy.sparks.material.opacity=0.4+Math.random()*0.5; }
         if(d<nd){nd=d;target=sy;} }
       else { sy.ring.rotation.z+=dt*0.4; sy.ring.lookAt(camera.position); }
@@ -596,7 +600,7 @@
       cross.classList.toggle('aim', inRange&&aimed);
       if(inRange&&aimed&&!wasLocked) tone(1320,0.07,'square',0.035); wasLocked=inRange&&aimed;
       if(inRange){ prompt.classList.add('show');
-        if(holding&&aimed){ charging=true; shake=Math.max(shake,target.progress*0.35); target.progress+=dt/REPAIR_T; if(target.progress>=1){target.progress=1;repair(target);} }
+        if(holding&&aimed){ charging=true; shake=Math.max(shake,target.progress*0.35); target.progress+=dt/HOLD[Math.min(4,SYS.filter(x=>x.repaired).length)]; if(target.progress>=1){target.progress=1;repair(target);} }
         else target.progress=Math.max(0,target.progress-dt*0.7);
         pt.innerHTML = charging?('powering up <b>'+target.name+'</b>…'):(aimed?('locked on · hold <b>'+(isMobile?'POWER UP':'E')+'</b> to power up the <b>'+target.name+'</b>'):('look at the <b>'+target.name+'</b> panel'));
         pbar.style.width=(target.progress*100)+'%';
