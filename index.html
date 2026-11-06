@@ -58,6 +58,21 @@
   #banner b{display:block;font-family:var(--syne);font-weight:800;font-size:clamp(30px,6vw,64px);color:var(--green);letter-spacing:.04em;text-shadow:0 2px 0 #000,0 0 30px rgba(70,240,138,.45)}
   #banner small{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#e9f3ff;text-shadow:0 1px 3px #000}
   #mission,#controls,#objArrow{display:none!important}
+  /* restyle from research: translucent framed panels, less glow, sized subtitles, idle-dim counter, safe-area margins */
+  #obj{font-size:clamp(15px,1.5vw,21px);background:rgba(0,0,0,.5);padding:6px 14px;border-radius:2px;text-shadow:0 0 2px #000}
+  #help{background:rgba(3,6,14,.72);border:1px solid rgba(79,248,210,.28)}
+  #radar{left:max(24px,3vw);bottom:max(22px,4vh)}
+  #counter{right:max(24px,3vw);opacity:.4;transition:opacity 1.5s}
+  #counter.hot{opacity:1;transition:opacity .15s}
+  #card{background:rgba(3,6,14,.62);border:1px solid rgba(79,248,210,.22);padding:18px 22px 16px;border-radius:3px}
+  #card::before,#card::after{content:'';position:absolute;width:9px;height:9px;border:1px solid var(--cyan)}
+  #card::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
+  #card::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+  #card h2,#card p{text-shadow:none}
+  #banner{transition:opacity 1.5s,transform .5s cubic-bezier(.2,1.4,.4,1)}
+  #banner.on{transition:opacity .18s,transform .5s cubic-bezier(.2,1.4,.4,1)}
+  #banner.start b{color:var(--amber);text-shadow:0 2px 0 #000}
+  #banner b{text-shadow:0 2px 0 #000,0 0 18px rgba(70,240,138,.3)}
   body.hudoff #radar,body.hudoff #obj,body.hudoff #help,body.hudoff #counter,body.hudoff #ttag{display:none!important}
   #pause{position:fixed;inset:0;z-index:15;display:none;align-items:center;background:linear-gradient(90deg,rgba(2,4,10,.92) 0%,rgba(2,4,10,.75) 40%,rgba(2,4,10,.25) 100%)}
   #pause.show{display:flex}
@@ -302,6 +317,27 @@
     const rl=new THREE.DirectionalLight(0x88b8ff,1.4); rl.position.set(-90,20,-80); scene.add(rl); }
   scene.add(new THREE.HemisphereLight(0x223044,0x05060c,0.55));
   const flash=new THREE.PointLight(0xdfeaff,2.2,60); scene.add(flash);
+  // Earth below the station, drawn procedurally (no texture download): oceans, land, clouds, lit by the key light, with a thin blue limb
+  const SUN=new THREE.Vector3(80,60,120).normalize();
+  const earthU={uSun:{value:SUN},uT:{value:0}};
+  const NOISE=`float h(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+    float n3(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}
+    float fbm(vec3 p){float v=0.,a=.5;for(int i=0;i<${lowEnd?3:5};i++){v+=a*n3(p);p*=2.03;a*=.5;}return v;}`;
+  const earth=new THREE.Mesh(new THREE.SphereGeometry(2500,96,64),new THREE.ShaderMaterial({uniforms:earthU,
+    vertexShader:`varying vec3 vP; void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+    fragmentShader:`uniform vec3 uSun; uniform float uT; varying vec3 vP; ${NOISE}
+      void main(){ vec3 n=normalize(vP); float l=fbm(n*3.2); float land=smoothstep(.53,.57,l);
+        vec3 col=mix(vec3(.015,.07,.19),mix(vec3(.13,.18,.08),vec3(.34,.29,.19),fbm(n*11.)),land);
+        float cl=smoothstep(.5,.78,fbm(n*6.5+vec3(uT*.004,0.,0.))); col=mix(col,vec3(.92),cl*.85);
+        float d=max(dot(n,uSun),0.); col*=.04+1.25*d; gl_FragColor=vec4(col,1.);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`}));
+  earth.position.set(0,-2720,-500); scene.add(earth);
+  const atmo=new THREE.Mesh(new THREE.SphereGeometry(2575,96,64),new THREE.ShaderMaterial({side:THREE.BackSide,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,
+    vertexShader:`varying vec3 vN; void main(){ vN=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+    fragmentShader:`varying vec3 vN; void main(){ float i=pow(clamp(.72-dot(vN,vec3(0.,0.,1.)),0.,1.),3.); gl_FragColor=vec4(vec3(.3,.6,1.)*i*1.6,i); }`}));
+  atmo.position.copy(earth.position); scene.add(atmo);
 
   // the real ISS
   let station=null, halfX=60;
@@ -354,7 +390,9 @@
     hitStop=0.09; shake=1; if(navigator.vibrate)navigator.vibrate([25,40,70]);
     const pi=document.querySelectorAll('#pips i')[SYS.filter(x=>x.repaired).length-1]; if(pi)pi.classList.add('on');
     showCard(sy); const n=SYS.filter(x=>x.repaired).length; cnum.textContent=n;
-    bannerEl.querySelector('small').textContent=sy.name+' · '+n+' of 5'; bannerEl.classList.add('on'); bannerT=1.8;
+    bannerEl.classList.remove('start'); bannerEl.querySelector('b').textContent='SYSTEM ONLINE';
+    bannerEl.querySelector('small').textContent=sy.name+(n===4?' · one system left':' · '+n+' of 5'); bannerEl.classList.add('on'); bannerT=1.0;
+    counterEl.classList.add('hot'); setTimeout(()=>counterEl.classList.remove('hot'),1200);
     if(n===SYS.length){ hitStop=0.7; shake=1.5; if(!reduceMotion)camera.fov+=12; sfxWin();
       try{localStorage.setItem('liviaPlayed','1')}catch(e){} const secs=Math.round((performance.now()-runStart)/1000); let best=secs; try{ best=Math.min(secs,+(localStorage.getItem('liviaBest')||1e9)); localStorage.setItem('liviaBest',best); }catch(e){}
       const fmt=x=>Math.floor(x/60)+':'+String(x%60).padStart(2,'0'); document.getElementById('wtime').textContent='your time '+fmt(secs)+(best<secs?' · best '+fmt(best):' · personal best');
@@ -366,15 +404,23 @@
 
   // ── game-feel: WebAudio SFX (no asset files), shockwaves, HUD refs ──
   let actx=null, chargeOsc=null;
-  let hum=null, humGain=null;
+  let hum=null, humGain=null, master=null, ambG=null;
   function initAudio(){ if(actx)return; try{actx=new (window.AudioContext||window.webkitAudioContext)();
+    // one bus through a compressor so layered sounds glue together instead of clipping
+    const comp=actx.createDynamicsCompressor(); comp.threshold.value=-18; comp.ratio.value=4; comp.attack.value=0.005; comp.release.value=0.2;
+    master=actx.createGain(); master.gain.value=0.8; master.connect(comp).connect(actx.destination);
+    // ambient bed: low brown noise plus two slightly detuned sines, so space isn't dead silent
+    const len=actx.sampleRate*4, nb=actx.createBuffer(1,len,actx.sampleRate), d=nb.getChannelData(0); let last=0; for(let i=0;i<len;i++){ last=(last+0.02*(Math.random()*2-1))/1.02; d[i]=last*3.5; }
+    const ns=actx.createBufferSource(); ns.buffer=nb; ns.loop=true; const nlp=actx.createBiquadFilter(); nlp.type='lowpass'; nlp.frequency.value=180;
+    ambG=actx.createGain(); ambG.gain.value=0.1; ns.connect(nlp).connect(ambG).connect(master); ns.start();
+    for(const f of [55,55.4]){ const o=actx.createOscillator(), g=actx.createGain(); o.frequency.value=f; g.gain.value=0.025; o.connect(g).connect(ambG); o.start(); }
     hum=actx.createOscillator(); humGain=actx.createGain(); const lp=actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=240;
-    hum.type='sawtooth'; hum.frequency.value=48; humGain.gain.value=0; hum.connect(lp).connect(humGain).connect(actx.destination); hum.start(); }catch(e){} }
-  function tone(f,dur,type,vol,to){ if(!actx)return; const o=actx.createOscillator(),g=actx.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,actx.currentTime); if(to)o.frequency.exponentialRampToValueAtTime(to,actx.currentTime+dur); g.gain.setValueAtTime(vol||0.12,actx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur); o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime+dur+0.02); }
+    hum.type='sawtooth'; hum.frequency.value=48; humGain.gain.value=0; hum.connect(lp).connect(humGain).connect(master); hum.start(); }catch(e){} }
+  function tone(f,dur,type,vol,to){ if(!actx)return; const o=actx.createOscillator(),g=actx.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,actx.currentTime); if(to)o.frequency.exponentialRampToValueAtTime(to,actx.currentTime+dur); g.gain.setValueAtTime(vol||0.12,actx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur); o.connect(g).connect(master); o.start(); o.stop(actx.currentTime+dur+0.02); }
   // each system plays the next note up a pentatonic scale, so progress is audible
   function sfxPower(k){ const b=[392,440,523,587,659][k]||523; tone(b,0.12,'triangle',0.16); setTimeout(()=>tone(b*1.5,0.16,'triangle',0.15),90); setTimeout(()=>tone(b*2,0.5,'sine',0.13),200); }
   function sfxWin(){ [523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone(f,0.6,'triangle',0.13),i*130)); }
-  function setCharge(on,p){ if(!actx)return; if(on){ if(!chargeOsc){ chargeOsc=actx.createOscillator(); const g=actx.createGain(); g.gain.value=0.05; chargeOsc.type='sawtooth'; chargeOsc.connect(g).connect(actx.destination); chargeOsc.start(); } chargeOsc.frequency.setValueAtTime(180+p*640,actx.currentTime); } else if(chargeOsc){ try{chargeOsc.stop();}catch(e){} chargeOsc=null; } }
+  function setCharge(on,p){ if(!actx)return; if(on){ if(!chargeOsc){ chargeOsc=actx.createOscillator(); const g=actx.createGain(); g.gain.value=0.05; chargeOsc.type='sawtooth'; chargeOsc.connect(g).connect(master); chargeOsc.start(); } chargeOsc.frequency.setValueAtTime(180+p*640,actx.currentTime); } else if(chargeOsc){ try{chargeOsc.stop();}catch(e){} chargeOsc=null; } }
   // space dust: streaks stretch with speed so motion reads against empty space
   const DUST=320, dustBase=new Float32Array(DUST*3), dustPos=new Float32Array(DUST*6);
   for(let i=0;i<DUST*3;i++) dustBase[i]=(Math.random()-.5)*80;
@@ -416,7 +462,8 @@
     if(paused)return; keys[e.code]=true; if(introT>0&&e.code!=='Escape')introT=0.001; if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();});
   addEventListener('keyup',e=>{keys[e.code]=false;});
   function launch(){ if(!ready)return; if(!runStart){ runStart=performance.now(); if(spawnPos&&!reduceMotion&&!(()=>{try{return localStorage.getItem('liviaPlayed')}catch(e){}})()){ introT=2.2; introFrom=spawnPos.clone().add(new THREE.Vector3(-34,20,70)); } } hideHero(); initAudio(); if(!isMobile&&document.pointerLockElement!==canvas){ const pl=canvas.requestPointerLock(); if(pl&&pl.catch)pl.catch(()=>{}); }
-    document.body.classList.add('live'); helpStep=0; helpT=0; if(false)toast.textContent=isMobile?'five systems are dark. Hold a finger down to fly, steer toward the red beacons, then hold POWER UP to bring each one online':'five systems are dark. Follow the red beacons and the sonar ping, aim, and hold E. Q fires the afterburner'; }
+    document.body.classList.add('live'); helpStep=0; helpT=0;
+    bannerEl.classList.add('start'); bannerEl.querySelector('b').textContent='RESTORE THE STATION'; bannerEl.querySelector('small').textContent='five systems are dark'; bannerEl.classList.add('on'); bannerT=2.4; counterEl.classList.add('hot'); setTimeout(()=>counterEl.classList.remove('hot'),3500); if(false)toast.textContent=isMobile?'five systems are dark. Hold a finger down to fly, steer toward the red beacons, then hold POWER UP to bring each one online':'five systems are dark. Follow the red beacons and the sonar ping, aim, and hold E. Q fires the afterburner'; }
   // pause menu: the browser releases pointer lock on Esc, so losing the lock mid-game opens it
   function applySettings(){ camera.fov=SET.fov; camera.updateProjectionMatrix(); reduceMotion=SET.rm; document.body.classList.toggle('hudoff',!SET.hud);
     if(actx){ SET.snd?actx.resume():actx.suspend(); } try{localStorage.setItem('liviaSettings',JSON.stringify(SET))}catch(e){} }
@@ -457,7 +504,7 @@
   function showCard(sy){ cE.textContent='system '+sy.eid+' online · '+sy.name; cH.textContent=sy.name.split(' ')[0]; cP.textContent=sy.body; cT.innerHTML=sy.tags.map(t=>'<span class="tag">'+t+'</span>').join(''); card.classList.add('show'); cardT=9; }
 
   // render
-  const clock=new THREE.Clock(); const fwd=new THREE.Vector3(),right=new THREE.Vector3(),up=new THREE.Vector3(0,1,0); const REPAIR_T=1.9;
+  const clock=new THREE.Clock(); const fwd=new THREE.Vector3(),right=new THREE.Vector3(),up=new THREE.Vector3(0,1,0); const REPAIR_T=1.5;
   function frame(dt,t){
     camera.rotation.set(pitch,yaw,0); camera.getWorldDirection(fwd); right.crossVectors(fwd,up).normalize();
     // bank into strafes and add a short, decaying shake on impacts (off for reduced motion)
@@ -482,6 +529,7 @@
     camera.position.addScaledVector(vel,dt);
     if(introT>0){ introT=Math.max(0,introT-dt); const k=1-introT/2.2, e=1-Math.pow(1-k,3); camera.position.lerpVectors(introFrom,spawnPos,e); vel.set(0,0,0); }
     flash.position.copy(camera.position);
+    earthU.uT.value=t;
     for(const nl of navLights) nl.visible=((t+nl.userData.ph)%1.6)<0.14;
     if(flashT>0){ flashT-=dt; if(flashT<=0&&flashSy){ flashSy.core.material.emissive.setHex(GREEN); flashSy.core.material.emissiveIntensity=1.6; } }
     if(hum){ const sp=vel.length()/22; hum.frequency.setTargetAtTime(48+sp*38,actx.currentTime,0.15); humGain.gain.setTargetAtTime(sp*0.035,actx.currentTime,0.2); }
@@ -521,7 +569,7 @@
     if(target&&actx&&!charging){ pingT-=dt; if(pingT<=0){ const c=Math.max(0,Math.min(1,1-nd/120)); pingT=1.7-c*1.4; tone(560+c*560,0.07,'sine',0.045); } }
 
     // name + distance on the target beacon while you're still flying toward it
-    if(target&&nd>=17){ _ndc.copy(target.pos).project(camera); if(_ndc.z<1&&Math.abs(_ndc.x)<0.95&&Math.abs(_ndc.y)<0.95){ ttag.style.transform='translate('+((_ndc.x+1)/2*innerWidth+16)+'px,'+((1-_ndc.y)/2*innerHeight-6)+'px)'; ttag.innerHTML=target.name+' · <b>'+Math.round(nd)+' m</b>'; ttag.classList.add('on'); } else ttag.classList.remove('on'); } else ttag.classList.remove('on');
+    if(target&&nd>=17){ _ndc.copy(target.pos).project(camera); if(_ndc.z<1&&Math.abs(_ndc.x)<0.3&&Math.abs(_ndc.y)<0.3){ ttag.style.transform='translate('+((_ndc.x+1)/2*innerWidth+16)+'px,'+((1-_ndc.y)/2*innerHeight-6)+'px)'; ttag.innerHTML=target.name+' · <b>'+Math.round(nd)+' m</b>'; ttag.classList.add('on'); } else ttag.classList.remove('on'); } else ttag.classList.remove('on');
     // off-screen arrow points to the nearest offline system
     if(target){ _ndc.copy(target.pos).project(camera); let nx=_ndc.x,ny=_ndc.y; const behind=_ndc.z>1; if(behind){nx=-nx;ny=-ny;}
       if(!behind && Math.abs(nx)<0.9 && Math.abs(ny)<0.82){ objArrow.classList.remove('on'); }
@@ -537,6 +585,7 @@
     // shockwaves
     for(let i=shocks.length-1;i>=0;i--){ const s=shocks[i]; s.life+=dt; const k=s.life/0.6; s.m.scale.setScalar(1+k*7); s.m.material.opacity=Math.max(0,0.9*(1-k)); s.m.lookAt(camera.position); if(k>=1){scene.remove(s.m);shocks.splice(i,1);} }
 
+    if(cardT>0&&cardT<5&&vel.length()>9){ cardT=0; card.classList.remove('show'); }
     if(cardT>0){cardT-=dt; if(cardT<=0)card.classList.remove('show');}
     renderer.render(scene,camera);
   }
