@@ -223,7 +223,7 @@
   // touch wording and controls only on real touchscreens; a narrow laptop window still uses the keyboard
   const isMobile = matchMedia('(pointer:coarse)').matches;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let shake=0, hitStop=0, bank=0, wasLocked=false, boostT=0, boostCD=0, pingT=1, runStart=0, ready=false;
+  let introT=0, introFrom=null, spawnPos=null, navLights=[], flashT=0, flashSy=null, shake=0, hitStop=0, bank=0, wasLocked=false, boostT=0, boostCD=0, pingT=1, runStart=0, ready=false;
   const _zero=new THREE.Vector3();
   const lowEnd = isMobile || (navigator.hardwareConcurrency||8) <= 4;
   const CY=0x4ff8d2, RED=0xff5a3a, GREEN=0x46f08a;
@@ -267,7 +267,9 @@
     station.traverse(o=>{ if(o.isMesh&&o.material){o.material.envMapIntensity=1.2; if(o.material.roughness>0.95)o.material.roughness=0.7;} });
     scene.add(station);
     SYS.forEach((sy,i)=>{ const t=i/(SYS.length-1); sy.pos=new THREE.Vector3(halfX*0.82 - t*halfX*1.64, (i%2?1:-1)*5, 9); buildFault(sy); });
-    camera.position.set(halfX*0.92,3,22); yaw=0.3; pitch=-0.05; modelReady=true; rdy();
+    // blinking nav lights at the extremes, red port / green starboard / white top, so the station feels alive (Garbut: the world runs without you)
+    [[-s.x/2,0,0,0xff3030,0],[s.x/2,0,0,0x30ff60,0],[0,s.y/2,0,0xffffff,0.8]].forEach(([x,y,z,c,ph])=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(0.7,10,8),new THREE.MeshBasicMaterial({color:c,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false})); m.material.fog=false; m.position.set(x,y,z); m.userData.ph=ph; scene.add(m); navLights.push(m); });
+    camera.position.set(halfX*0.92,3,22); spawnPos=camera.position.clone(); yaw=0.3; pitch=-0.05; modelReady=true; rdy();
   },(xhr)=>{ const l=document.getElementById('ldp'); if(xhr.total){ const pc=Math.round(xhr.loaded/xhr.total*100); if(l) l.textContent='docking with station · '+pc+'%'; const sl=document.getElementById('startlbl'); if(sl&&!ready) sl.textContent='docking with station · '+pc+'%'; } },()=>{modelReady=true;rdy();});
   function rdy(){ if(envReady&&modelReady&&!ready){ ready=true; const l=document.getElementById('load'); if(l)l.style.opacity='0';
     const st=document.getElementById('start'); st.classList.remove('wait'); st.classList.add('ready'); st.removeAttribute('aria-disabled');
@@ -291,7 +293,8 @@
     sy.repaired=false; sy.progress=0;
   }
   function repair(sy){ sy.repaired=true;
-    sy.core.material.emissive.setHex(GREEN); sy.core.material.emissiveIntensity=1.6;
+    // flash pure white for a moment before settling green (Nijman, Art of Screenshake)
+    sy.core.material.emissive.setHex(0xffffff); sy.core.material.emissiveIntensity=6; flashT=0.08; flashSy=sy;
     sy.ring.material.color.setHex(GREEN); sy.light.color.setHex(GREEN); sy.light.intensity=1.4;
     if(sy.beam){ sy.beam.material.color.setHex(GREEN); sy.beam.material.opacity=0.16; }
     if(sy.sparks){scene.remove(sy.sparks);sy.sparks=null;}
@@ -340,9 +343,9 @@
   let yaw=Math.PI,pitch=0; const vel=new THREE.Vector3(); const keys={};
   const cross=document.getElementById('cross'), hero=document.getElementById('hero');
   let heroGone=false; function hideHero(){if(!heroGone){heroGone=true;hero.classList.add('gone');cross.classList.add('on');}}
-  addEventListener('keydown',e=>{keys[e.code]=true; if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();});
+  addEventListener('keydown',e=>{keys[e.code]=true; if(introT>0&&e.code!=='Escape')introT=0.001; if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();});
   addEventListener('keyup',e=>{keys[e.code]=false;});
-  function launch(){ if(!ready)return; if(!runStart)runStart=performance.now(); hideHero(); initAudio(); if(!isMobile&&document.pointerLockElement!==canvas){ const pl=canvas.requestPointerLock(); if(pl&&pl.catch)pl.catch(()=>{}); }
+  function launch(){ if(!ready)return; if(!runStart){ runStart=performance.now(); if(spawnPos&&!reduceMotion){ introT=2.2; introFrom=spawnPos.clone().add(new THREE.Vector3(-34,20,70)); } } hideHero(); initAudio(); if(!isMobile&&document.pointerLockElement!==canvas){ const pl=canvas.requestPointerLock(); if(pl&&pl.catch)pl.catch(()=>{}); }
     toast.textContent=isMobile?'five systems are dark. Hold a finger down to fly, steer toward the red beacons, then hold POWER UP to bring each one online':'five systems are dark. Follow the red beacons and the sonar ping, aim, and hold E. Q fires the afterburner'; toast.classList.add('on'); setTimeout(()=>toast.classList.remove('on'),6500); }
   canvas.addEventListener('click',launch); const startEl=document.getElementById('start'); startEl.addEventListener('click',launch); startEl.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); launch(); } });
   let dragging=false, lx=0, ly=0;
@@ -392,7 +395,11 @@
     const sp01=vel.length()/22;
     if(!reduceMotion){ const fovT=74+7*Math.min(1.75,sp01); const nf=camera.fov+(fovT-camera.fov)*Math.min(1,dt*5); if(Math.abs(nf-camera.fov)>0.02){camera.fov=nf;camera.updateProjectionMatrix();} }
     updateDust(sp01);
-    camera.position.addScaledVector(vel,dt); flash.position.copy(camera.position);
+    camera.position.addScaledVector(vel,dt);
+    if(introT>0){ introT=Math.max(0,introT-dt); const k=1-introT/2.2, e=1-Math.pow(1-k,3); camera.position.lerpVectors(introFrom,spawnPos,e); vel.set(0,0,0); }
+    flash.position.copy(camera.position);
+    for(const nl of navLights) nl.visible=((t+nl.userData.ph)%1.6)<0.14;
+    if(flashT>0){ flashT-=dt; if(flashT<=0&&flashSy){ flashSy.core.material.emissive.setHex(GREEN); flashSy.core.material.emissiveIntensity=1.6; } }
     if(hum){ const sp=vel.length()/22; hum.frequency.setTargetAtTime(48+sp*38,actx.currentTime,0.15); humGain.gain.setTargetAtTime(sp*0.035,actx.currentTime,0.2); }
 
     // soft boundary — gently keep you near the station
