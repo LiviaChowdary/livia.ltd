@@ -309,6 +309,7 @@
   let helpStep=-1, helpT=0, movedDist=0, usedBoost=false, bannerT=0, introT=0, introFrom=null, spawnPos=null, navLights=[], flashT=0, flashSy=null, shake=0, hitStop=0, bank=0, wasLocked=false, boostT=0, boostCD=0, pingT=1, runStart=0, ready=false;
   const _zero=new THREE.Vector3();
   // gamepad (standard mapping): left stick move, right stick look, A power up, X boost, bumpers up/down, Start menu
+  let perfT=1/60, perfSlow=0, perfDropped=false;
   const pad={lx:0,ly:0,rx:0,ry:0,e:false,boost:false,up:false,down:false,start:false,a:false,_start:false,_a:false};
   function pollPad(){ const gs=navigator.getGamepads?navigator.getGamepads():[]; let g=null; for(const x of gs){ if(x&&x.connected){g=x;break;} }
     if(!g){ pad.lx=pad.ly=pad.rx=pad.ry=0; pad.e=pad.boost=pad.up=pad.down=pad.start=pad.a=false; return; }
@@ -444,7 +445,7 @@
     for(const f of [55,55.4]){ const o=actx.createOscillator(), g=actx.createGain(); o.frequency.value=f; g.gain.value=0.025; o.connect(g).connect(ambG); o.start(); }
     hum=actx.createOscillator(); humGain=actx.createGain(); const lp=actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=240;
     hum.type='sawtooth'; hum.frequency.value=48; humGain.gain.value=0; hum.connect(lp).connect(humGain).connect(master); hum.start(); }catch(e){} }
-  function tone(f,dur,type,vol,to){ if(!actx)return; const o=actx.createOscillator(),g=actx.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,actx.currentTime); if(to)o.frequency.exponentialRampToValueAtTime(to,actx.currentTime+dur); g.gain.setValueAtTime(vol||0.12,actx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur); o.connect(g).connect(master); o.start(); o.stop(actx.currentTime+dur+0.02); }
+  function tone(f,dur,type,vol,to,pan){ if(!actx)return; const o=actx.createOscillator(),g=actx.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,actx.currentTime); if(to)o.frequency.exponentialRampToValueAtTime(to,actx.currentTime+dur); g.gain.setValueAtTime(vol||0.12,actx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur); if(pan!=null&&actx.createStereoPanner){ const sp=actx.createStereoPanner(); sp.pan.value=pan; o.connect(g).connect(sp).connect(master); } else o.connect(g).connect(master); o.start(); o.stop(actx.currentTime+dur+0.02); }
   // each system plays the next note up a pentatonic scale, so progress is audible
   function sfxPower(k){ const b=[392,440,523,587,659][k]||523; tone(b,0.12,'triangle',0.16); setTimeout(()=>tone(b*1.5,0.16,'triangle',0.15),90); setTimeout(()=>tone(b*2,0.5,'sine',0.13),200); }
   function sfxWin(){ [523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone(f,0.6,'triangle',0.13),i*130)); }
@@ -609,7 +610,7 @@
     } else { prompt.classList.remove('show'); chargeRing.classList.remove('on'); cross.classList.remove('aim'); }
     setCharge(charging, target?target.progress:0);
     // sonar ping toward the nearest dark system: faster and higher as you close in
-    if(target&&actx&&!charging){ pingT-=dt; if(pingT<=0){ const c=Math.max(0,Math.min(1,1-nd/120)); pingT=1.7-c*1.4; tone(560+c*560,0.07,'sine',0.045); } }
+    if(target&&actx&&!charging){ pingT-=dt; if(pingT<=0){ const c=Math.max(0,Math.min(1,1-nd/120)); pingT=1.7-c*1.4; tone(560+c*560,0.07,'sine',0.045,0,Math.max(-0.9,Math.min(0.9,_toS.dot(right)))); } }
 
     // name + distance on the target beacon while you're still flying toward it
     if(target&&nd>=17){ _ndc.copy(target.pos).project(camera); if(_ndc.z<1&&Math.abs(_ndc.x)<0.3&&Math.abs(_ndc.y)<0.3){ ttag.style.transform='translate('+((_ndc.x+1)/2*innerWidth+16)+'px,'+((1-_ndc.y)/2*innerHeight-6)+'px)'; ttag.innerHTML=target.name+' · <b>'+Math.round(nd)+' m</b>'; ttag.classList.add('on'); } else ttag.classList.remove('on'); } else ttag.classList.remove('on');
@@ -633,6 +634,8 @@
     renderer.render(scene,camera);
   }
   function animate(){requestAnimationFrame(animate);let dt=Math.min(0.05,clock.getDelta());
+    // if frames run slow for ~2s, drop render resolution once so weaker devices stay smooth
+    perfT=perfT*0.97+dt*0.03; if(!perfDropped&&heroGone&&perfT>1/38){ perfSlow+=dt; if(perfSlow>2){ perfDropped=true; renderer.setPixelRatio(Math.min(1,DPR)); fit(); } } else perfSlow=0;
     pollPad(); if(pad.start&&!pad._start){ if(!heroGone) launch(); else if(!document.getElementById('win').classList.contains('show')) (paused?resumeGame():openPause()); }
     if(pad.a&&!pad._a&&!heroGone) launch(); pad._start=pad.start; pad._a=pad.a; if(paused){ renderer.render(scene,camera); return; } if(hitStop>0){hitStop-=dt; dt*=0.12;} frame(dt,clock.elapsedTime);}
   setTimeout(()=>{const l=document.getElementById('load');if(l)l.style.opacity='0';},22000);
