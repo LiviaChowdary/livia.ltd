@@ -573,7 +573,9 @@
   const prompt=document.getElementById('prompt'), pt=prompt.querySelector('.pt'), pbar=document.querySelector('#pbar i');
   const card=document.getElementById('card'),cE=card.querySelector('.eid'),cH=card.querySelector('h2'),cP=card.querySelector('p'),cT=card.querySelector('.tags');
   let cardT=0;
-  function showCard(sy){ cE.textContent='system '+sy.eid+' online · '+sy.name; cH.textContent=sy.name.split(' ')[0]; cP.textContent=sy.body; cT.innerHTML=sy.tags.map(t=>'<span class="tag">'+t+'</span>').join(''); card.classList.add('show'); cardT=9; }
+  // bio cards type in like an incoming transmission (~110 characters a second)
+  let cardTxt='', cardChars=0;
+  function showCard(sy){ cE.textContent='system '+sy.eid+' online · '+sy.name; cH.textContent=sy.name.split(' ')[0]; cardTxt=sy.body; cardChars=0; cP.textContent=reduceMotion?sy.body:''; if(reduceMotion)cardChars=sy.body.length; cT.innerHTML=sy.tags.map(t=>'<span class="tag">'+t+'</span>').join(''); card.classList.add('show'); cardT=9; }
 
   // render
   const clock=new THREE.Clock(); const fwd=new THREE.Vector3(),right=new THREE.Vector3(),up=new THREE.Vector3(0,1,0); const REPAIR_T=1.5;
@@ -664,6 +666,7 @@
     // shockwaves
     for(let i=shocks.length-1;i>=0;i--){ const s=shocks[i]; s.life+=dt; const k=s.life/0.6; s.m.scale.setScalar(1+k*7); s.m.material.opacity=Math.max(0,0.9*(1-k)); s.m.lookAt(camera.position); if(k>=1){scene.remove(s.m);shocks.splice(i,1);} }
 
+    if(cardChars<cardTxt.length){ cardChars=Math.min(cardTxt.length,cardChars+dt*110); cP.textContent=cardTxt.slice(0,cardChars|0); }
     if(cardT>0&&cardT<5&&vel.length()>9){ cardT=0; card.classList.remove('show'); }
     if(cardT>0){cardT-=dt; if(cardT<=0)card.classList.remove('show');}
     renderer.render(scene,camera);
