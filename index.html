@@ -676,6 +676,7 @@
     pollPad(); if(pad.start&&!pad._start){ if(!heroGone) launch(); else if(!document.getElementById('win').classList.contains('show')) (paused?resumeGame():openPause()); }
     if(pad.a&&!pad._a&&!heroGone) launch(); pad._start=pad.start; pad._a=pad.a; if(paused){ renderer.render(scene,camera); return; } if(hitStop>0){hitStop-=dt; dt*=0.12;} frame(dt,clock.elapsedTime);}
   setTimeout(()=>{const l=document.getElementById('load');if(l)l.style.opacity='0';},22000);
+  window.__step=(n,dt=0.05)=>{ for(let i=0;i<n;i++) frame(dt,performance.now()/1000); };
   window.__view=(x,y,z,yw,pt)=>{ camera.position.set(x,y,z); yaw=yw; pitch=pt; vel.set(0,0,0); };
   window.__cap=(i)=>{ const sy=SYS[i]; if(sy&&sy.pos){camera.position.set(sy.pos.x+8,sy.pos.y+3,sy.pos.z+12);yaw=0.589;pitch=-0.205;} frame(0.001,1); };
   function fit(){const w=innerWidth||1,h=innerHeight||1;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(composer)composer.setSize(w,h);}
