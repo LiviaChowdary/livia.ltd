@@ -57,6 +57,7 @@
   #obj b{color:var(--red);font-weight:400}
   #help{position:fixed;left:24px;top:104px;z-index:6;max-width:300px;background:rgba(0,0,0,.78);color:#eef2f8;font-size:12px;line-height:1.6;padding:12px 15px;border-radius:2px;pointer-events:none;opacity:0;transform:translateX(-10px);transition:opacity .35s,transform .35s}
   #help.on{opacity:1;transform:none}
+  .tipk{display:inline-block;font-family:var(--mono);font-weight:400;font-size:10px;letter-spacing:.2em;color:#05070d;background:var(--amber);padding:1px 6px;margin-right:8px;border-radius:2px;vertical-align:1px}
   #help kbd{font-family:var(--mono);background:#eef2f8;color:#05070d;padding:0 5px;border-radius:2px;font-size:11px}
   #banner{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.9);z-index:6;text-align:center;pointer-events:none;opacity:0;transition:opacity .3s,transform .5s cubic-bezier(.2,1.4,.4,1)}
   #banner.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
@@ -410,11 +411,25 @@
   },(xhr)=>{ const l=document.getElementById('ldp'); if(xhr.total){ const pc=Math.round(xhr.loaded/xhr.total*100); if(l) l.textContent='docking with station · '+pc+'%'; const sl=document.getElementById('startlbl'); if(sl&&!ready) sl.textContent='docking with station · '+pc+'%'; } },()=>{modelReady=true;rdy(); document.getElementById('read').classList.add('show');});
   function rdy(){ if(envReady&&modelReady&&!ready){ ready=true; const l=document.getElementById('load'); if(l)l.style.opacity='0';
     const st=document.getElementById('start'); st.classList.remove('wait'); st.classList.add('ready'); st.removeAttribute('aria-disabled');
-    document.getElementById('startlbl').innerHTML='launch the drone &nbsp;▸'; clearInterval(lineTimer); const hl=document.getElementById('hlines'); hl.style.opacity='0'; } }
+    document.getElementById('startlbl').innerHTML='launch the drone &nbsp;▸'; } }
   // short lines while the station loads, so the wait reads as part of the game
-  const LINES=["Livia started building in her dad's startup office.","Lux Nova has put $30,000+ of equipment into hospitals.","This is a real ISS model: 131 meshes, 44 MB. Worth the wait.","BerriBasket won the U.S. Congressional App Challenge.","40+ ML projects shipped in Python.","Not into games? Press R to just read."];
-  let lineI=0; const hlEl=document.getElementById('hlines'); hlEl.textContent=LINES[0];
-  const lineTimer=setInterval(()=>{ hlEl.style.opacity='0'; setTimeout(()=>{ if(ready)return; lineI=(lineI+1)%LINES.length; hlEl.textContent=LINES[lineI]; hlEl.style.opacity='1'; },500); },3800);
+  const K=(d,m)=>isMobile?m:d;
+  const LINES=[
+    K("Hold E on a dark panel to bring it online. Every system you restore unlocks part of Livia's bio.","Hold POWER UP on a dark panel to bring it online. Every system you restore unlocks part of Livia's bio."),
+    "Red blips on the radar are dark systems. Green ones are already back online.",
+    "Livia used to skip school to spend the day in her dad's startup office. The origin core has the rest.",
+    K("Press Q for the afterburner. It needs about five seconds to recharge.","Tap boost for the afterburner. It needs about five seconds to recharge."),
+    "Lux Nova has put $30,000+ of equipment into under-resourced hospitals. Fly to the ventures bay for the rest.",
+    "Your run is timed. The end screen shows your splits and your personal best.",
+    "BerriBasket won the U.S. Congressional App Challenge. It pays farmers directly.",
+    "Each system takes a little longer to power up than the last. Keep the reticle on the panel.",
+    "Livia has shipped 40+ ML projects in Python. The experience relay has the details.",
+    "Somewhere past the end of the solar array there's a gold beacon. Most pilots never find it.",
+    K("Esc pauses. The pause menu keeps everything you've collected so far.","The menu button pauses and keeps everything you've collected so far."),
+    K("Not a gamer? Press R to read the whole bio as a normal page.","Not a gamer? Tap read to see the whole bio as a normal page.")];
+  const tipHTML=t=>'<b class="tipk">TIP</b>'+t;
+  let lineI=0; const hlEl=document.getElementById('hlines'); hlEl.innerHTML=tipHTML(LINES[0]);
+  const lineTimer=setInterval(()=>{ hlEl.style.opacity='0'; setTimeout(()=>{ lineI=(lineI+1)%LINES.length; hlEl.innerHTML=tipHTML(LINES[lineI]); hlEl.style.opacity='1'; },500); },3800);
 
   // a damaged system = red sparking node; repaired = steady green
   function buildFault(sy){
@@ -442,7 +457,7 @@
     addLayer(SYS.filter(x=>x.repaired).length-1);
     hitStop=0.09; shake=1; if(navigator.vibrate)navigator.vibrate([25,40,70]);
     const pi=document.querySelectorAll('#pips i')[SYS.filter(x=>x.repaired).length-1]; if(pi)pi.classList.add('on');
-    showCard(sy); const n=SYS.filter(x=>x.repaired).length; cnum.textContent=n;
+    showCard(sy); const n=SYS.filter(x=>x.repaired).length; cnum.textContent=n; if(TIPS[n-1]){ tipH=tipHTML(TIPS[n-1]); tipK='tip'+n; tipT=7; }
     bannerEl.classList.remove('start'); bannerEl.querySelector('b').textContent='SYSTEM ONLINE';
     bannerEl.querySelector('small').textContent=sy.name+(n===4?' · one system left':' · '+n+' of 5'); bannerEl.classList.add('on'); bannerT=1.0;
     counterEl.classList.add('hot'); setTimeout(()=>counterEl.classList.remove('hot'),1200);
@@ -494,13 +509,19 @@
   const hitflash=document.getElementById('hitflash'), objArrow=document.getElementById('objArrow'), chargeRing=document.getElementById('chargeRing'), toast=document.getElementById('toast'), bound=document.getElementById('bound'), counterEl=document.getElementById('counter'), ttag=document.getElementById('ttag'), objEl=document.getElementById('obj'), helpEl=document.getElementById('help'), bannerEl=document.getElementById('banner'), radar=document.getElementById('radar'), rctx=radar.getContext('2d');
   // help box teaches one control at a time and moves on once you've used it
   const HELP=isMobile?[
-    {t:'Left thumb moves. Right thumb looks around. ▲ ▼ go up and down.', done:()=>movedDist>20},
-    {t:'The <b style="color:var(--red)">red blips</b> on your radar are dark systems. Fly to one.', done:()=>helpT>6},
-    {t:'Close in and aim, then hold <kbd>POWER UP</kbd>.', done:()=>SYS.some(x=>x.repaired)}]:[
-    {t:'Use <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to fly and the mouse to look. <kbd>Space</kbd> and <kbd>Shift</kbd> go up and down.', done:()=>movedDist>20},
-    {t:'The <b style="color:var(--red)">red blips</b> on your radar are dark systems. Fly to one.', done:()=>helpT>6},
-    {t:'Press <kbd>Q</kbd> for the afterburner.', done:()=>usedBoost||helpT>8},
-    {t:'Close in, aim, then hold <kbd>E</kbd> to power it up.', done:()=>SYS.some(x=>x.repaired)}];
+    {t:'<b class="tipk">TIP</b>Left thumb moves. Right thumb looks around. ▲ ▼ go up and down.', done:()=>movedDist>20},
+    {t:'<b class="tipk">TIP</b>The <b style="color:var(--red)">red blips</b> on your radar are dark systems. Each one holds part of Livia\'s bio.', done:()=>helpT>6},
+    {t:'<b class="tipk">TIP</b>Close in and aim, then hold <kbd>POWER UP</kbd>.', done:()=>SYS.some(x=>x.repaired)}]:[
+    {t:'<b class="tipk">TIP</b>Use <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to fly and the mouse to look. <kbd>Space</kbd> and <kbd>Shift</kbd> go up and down.', done:()=>movedDist>20},
+    {t:'<b class="tipk">TIP</b>The <b style="color:var(--red)">red blips</b> on your radar are dark systems. Each one holds part of Livia\'s bio.', done:()=>helpT>6},
+    {t:'<b class="tipk">TIP</b>Press <kbd>Q</kbd> for the afterburner. It recharges in about five seconds.', done:()=>usedBoost||helpT>8},
+    {t:'<b class="tipk">TIP</b>Close in, aim, then hold <kbd>E</kbd> to power it up.', done:()=>SYS.some(x=>x.repaired)}];
+  const TIPS=[
+    K('Everything you collect is saved. Press <kbd>Esc</kbd> to read it again.','Everything you collect is saved. Tap the menu to read it again.'),
+    'Each system holds a little longer than the last. Stay locked on.',
+    'Three down. Your splits will be on the end screen.',
+    'One left. The last system takes the longest hold. And there\'s a gold beacon past the end of the solar array.'];
+  let tipT=0, tipH='', tipK='';
   function drawRadar(){ const W=300,c=W/2,R=c-6,sc=R/150; rctx.clearRect(0,0,W,W); rctx.save(); rctx.beginPath(); rctx.arc(c,c,R,0,6.283); rctx.clip();
     rctx.fillStyle='rgba(4,10,20,.72)'; rctx.fillRect(0,0,W,W); rctx.strokeStyle='rgba(79,248,210,.12)'; rctx.lineWidth=2; for(const rr of [R*.33,R*.66]){ rctx.beginPath(); rctx.arc(c,c,rr,0,6.283); rctx.stroke(); }
     const sn=Math.sin(yaw), cs=Math.cos(yaw), P=camera.position;
@@ -669,7 +690,7 @@
     // HUD: radar, objective subtitle, help box, banner
     curTarget=target; movedDist+=vel.length()*dt; if(heroGone) drawRadar();
     if(heroGone&&target&&nd>=17&&introT<=0){ setHTML(objEl,'Fly to the <b>'+target.name+'</b>.'); objEl.classList.add('on'); } else objEl.classList.remove('on');
-    if(helpStep>=0&&helpStep<HELP.length&&introT<=0){ helpT+=dt; const h=HELP[helpStep]; if(helpEl.dataset.i!=helpStep){ helpEl.innerHTML=h.t; helpEl.dataset.i=helpStep; } helpEl.classList.add('on'); if(h.done()&&helpT>2.5){ helpEl.classList.remove('on'); helpStep++; helpT=-0.5; } } else helpEl.classList.remove('on');
+    if(helpStep>=0&&helpStep<HELP.length&&introT<=0){ helpT+=dt; const h=HELP[helpStep]; if(helpEl.dataset.i!=helpStep){ helpEl.innerHTML=h.t; helpEl.dataset.i=helpStep; } helpEl.classList.add('on'); if(h.done()&&helpT>2.5){ helpEl.classList.remove('on'); helpStep++; helpT=-0.5; } } else if(tipT>0&&introT<=0&&!card.classList.contains('show')){ tipT-=dt; if(helpEl.dataset.i!==tipK){ helpEl.innerHTML=tipH; helpEl.dataset.i=tipK; } helpEl.classList.add('on'); } else helpEl.classList.remove('on');
     if(bannerT>0){ bannerT-=dt; if(bannerT<=0) bannerEl.classList.remove('on'); }
     // shockwaves
     for(let i=shocks.length-1;i>=0;i--){ const s=shocks[i]; s.life+=dt; const k=s.life/0.6; s.m.scale.setScalar(1+k*7); s.m.material.opacity=Math.max(0,0.9*(1-k)); s.m.lookAt(camera.position); if(k>=1){scene.remove(s.m);shocks.splice(i,1);} }
